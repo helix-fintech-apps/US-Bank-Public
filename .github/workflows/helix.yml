@@ -3,16 +3,19 @@
 # Repo secrets: HELIX_GATE_URL (the Helix review endpoint) and HELIX_GATE_TOKEN. Until they are set, the check
 # passes with a notice that Helix is not connected, so it never pretends to have reviewed anything.
 name: Helix
-# Paused: GitHub Actions is off for now (org billing). Runs only if started by hand.
-# To turn back on, restore the original `on:` triggers (see git history).
+# On for every pull request into any branch (no paths-ignore: the gate must see every PR). Uses `pull_request`, never
+# `pull_request_target`: PR code is never run and fork PRs get no secrets (the gate then reports "not connected").
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 permissions: { contents: read }
+concurrency: { group: "${{ github.workflow }}-${{ github.ref }}", cancel-in-progress: true }
 jobs:
   gate:
     name: Helix gate
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     env:
       HELIX_GATE_URL: ${{ secrets.HELIX_GATE_URL }}
       HELIX_GATE_TOKEN: ${{ secrets.HELIX_GATE_TOKEN }}
@@ -43,9 +46,12 @@ jobs:
                 --arg sha "$PR_SHA" --arg base "$PR_BASE" \
                 --arg title "$PR_TITLE" --rawfile diff pr.diff \
                 '{repo:$repo, pr:$pr, sha:$sha, base:$base, title:$title, diff:$diff}' > req.json
-          code=$(curl -sS -o verdict.json -w '%{http_code}' -X POST "$HELIX_GATE_URL" \
-                   -H "Authorization: Bearer $HELIX_GATE_TOKEN" -H 'Content-Type: application/json' --data @req.json)
-          if [ "$code" != "200" ]; then echo "::error::Helix answered HTTP $code"; cat verdict.json || true; exit 1; fi
+          # One call, bounded: a slow or dead endpoint fails the check in at most 60 s instead of burning minutes.
+          rc=0
+          code=$(curl -sS --connect-timeout 10 --max-time 60 -o verdict.json -w '%{http_code}' -X POST "$HELIX_GATE_URL" \
+                   -H "Authorization: Bearer $HELIX_GATE_TOKEN" -H 'Content-Type: application/json' --data @req.json) || rc=$?
+          if [ "$rc" != "0" ]; then echo "::error::Helix did not answer (curl exit $rc; 28 means no answer within 60 s). No verdict, so the PR is held."; exit 1; fi
+          if [ "$code" != "200" ]; then echo "::error::Helix answered HTTP $code, not 200. No verdict, so the PR is held."; cat verdict.json || true; exit 1; fi
           verdict=$(jq -r '.verdict // "Not proven"' verdict.json)
           echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
           {
