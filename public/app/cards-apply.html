@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apply for a card | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+<link rel="stylesheet" href="/assets/cards.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <a class="c-back" href="/app/cards">‹ Your cards</a>
+  <div class="sv-h"><div><h1>Apply for a credit card</h1><p>See your offers with a soft check first. Only a full application uses a hard check.</p></div></div>
+  <div class="steps" aria-label="Steps"><span id="s1" aria-current="step">1. Choose a card</span><span>›</span><span id="s2">2. See if you prequalify</span><span>›</span><span id="s3">3. Apply</span><span>›</span><span id="s4">4. Decision</span></div>
+  <p class="err" id="err" role="alert"></p>
+  <div id="result"></div>
+  <div id="flow" hidden>
+    <section class="c-sec" aria-labelledby="ln-h"><h2 id="ln-h">Our cards</h2><div class="lineup" id="lineup"></div>
+      <p class="sv-muted c-mt">Demo terms, not real offers. APRs are variable in real life; here they're fixed numbers for the demo.</p></section>
+    <div class="sv-grid even">
+      <section class="sv-card" aria-labelledby="pq-h"><header><h2 id="pq-h">See if you prequalify</h2><span class="c-sim">Soft check</span></header><div class="sv-pad">
+        <form id="pq" class="sv-form"><label class="sv-fld"><span>Yearly income ($)</span><input class="sv-in" name="income" inputmode="decimal" placeholder="60000" required></label>
+          <label class="sv-fld"><span>Monthly rent or mortgage ($)</span><input class="sv-in" name="housing" inputmode="decimal" placeholder="1200" required></label>
+          <div class="wide"><button class="btn sv-btn ghost">Check my offers</button></div></form>
+        <p class="sv-note c-mt"><b>Simulated soft check:</b> no credit bureau is contacted and it doesn't affect your score.</p>
+        <div id="pq-out" aria-live="polite"></div></div></section>
+      <section class="sv-card" aria-labelledby="ap-h"><header><h2 id="ap-h">Apply</h2><span class="c-sim">Hard check</span></header><div class="sv-pad">
+        <form id="apply" class="sv-form"><label class="sv-fld wide"><span>Card</span><select class="sv-in" name="productCode" id="prod"></select></label>
+          <label class="sv-fld"><span>Yearly income ($)</span><input class="sv-in" name="income" inputmode="decimal" required></label>
+          <label class="sv-fld"><span>Monthly rent or mortgage ($)</span><input class="sv-in" name="housing" inputmode="decimal" required></label>
+          <label class="sv-fld wide" id="req"><span>Credit limit you'd like (optional)</span><input class="sv-in" name="requestedLimit" inputmode="decimal" placeholder="Leave blank for our best offer"></label>
+          <div id="sec" class="sv-form wide" hidden><label class="sv-fld"><span>Security deposit ($300–$5,000)</span><input class="sv-in" name="deposit" inputmode="decimal" value="500"></label>
+            <label class="sv-fld"><span>Deposit from</span><select class="sv-in from" name="fromAccountId"></select></label>
+            <p class="sv-muted wide">Your deposit becomes your credit limit and is held while the card is open.</p></div>
+          <label class="chk-l wide"><input type="checkbox" name="consent" required> I agree to a simulated hard credit check, which lowers my simulated score by a few points.</label>
+          <div class="wide"><button class="btn sv-btn pri">Submit application</button></div></form>
+        <p class="sv-muted c-mt">You'll confirm it's you with a one-time code. Simulated: no real credit bureau is contacted.</p></div></section>
+    </div>
+  </div>
+</div></main>
+<script type="module">
+import { api, shell, money, esc, newKey } from '/assets/client.js';
+import { cardArt, pill, RESULT } from '/assets/cards.js';
+shell('/app/cards');
+const $ = s => document.querySelector(s);
+let products = [], funding = [], appKey = newKey();
+const step = n => [1, 2, 3, 4].forEach(i => (i === n ? $('#s' + i).setAttribute('aria-current', 'step') : $('#s' + i).removeAttribute('aria-current')));
+const fromOpts = () => funding.map(a => `<option value="${esc(a.id)}">${esc(a.name)} ··${esc(a.last4)} (${money(a.balance)})</option>`).join('');
+
+function pick(code) {
+  $('#prod').value = code;
+  document.querySelectorAll('.prod-tile').forEach(t => t.setAttribute('aria-pressed', String(t.dataset.code === code)));
+  const p = products.find(x => x.code === code);
+  $('#sec').hidden = !p?.secured; $('#req').hidden = !!p?.secured;
+}
+
+function showDecision(a) {
+  step(4);
+  const o = a.offer, head = { approve: "You're approved", decline: "We can't approve this application right now", counteroffer: 'We have a different offer for you' }[a.decision];
+  const p = o && products.find(x => x.code === o.productCode);
+  $('#result').innerHTML = `<section class="sv-card sv-pad decision ${esc(a.decision)}" aria-labelledby="dec-h">
+    <h2 id="dec-h">${a.accountId && a.decision === 'counteroffer' ? 'Offer accepted. Your card is ready' : esc(head)}</h2>
+    <p class="sv-muted c-mt">${esc(a.productName)} · simulated score ${esc(a.score)} · simulated hard check</p>
+    ${a.decision === 'decline' ? '<h3 class="c-mt">Why we made this decision</h3>' : '<h3 class="c-mt">Details</h3>'}
+    <ul>${a.reasons.map(r => `<li>${esc(r.text)}</li>`).join('')}</ul>
+    ${a.decision === 'decline' ? '<p class="sv-note">This is your adverse action notice (simulated). You can ask why within 60 days, and you can get a free copy of your credit report. No real credit report was used.</p>' : ''}
+    ${o ? `<div class="dec-offer c-mt"><div>${cardArt({ kind: p?.kind, name: o.productName, last4: '••••', holder: '', exp: '' })}</div>
+      <div class="cd-sum flat"><div class="stat"><span class="k">Credit limit</span><span class="v">${o.creditLimit ? money(o.creditLimit) : 'Your deposit'}</span></div>
+      <div class="stat"><span class="k">Purchase APR</span><span class="v">${esc(o.apr)}%</span></div>
+      ${p ? `<div class="stat"><span class="k">Annual fee</span><span class="v">${money(p.annualFee)}</span></div>` : ''}</div></div>` : ''}
+    ${a.accountId ? `<p class="c-mt"><a class="btn pri sv-btn" href="/app/cards-detail?account=${esc(a.accountId)}">Go to your card</a></p>
+      <p class="sv-muted c-mt">Your demo virtual card number is ready now (you'll confirm with a code to see it). Simulated: no physical card is mailed.</p>` : ''}
+    ${a.decision === 'counteroffer' && !a.accountId ? `<form id="accept" class="sv-form c-mt">
+      ${o.secured ? `<label class="sv-fld"><span>Security deposit ($300–$5,000)</span><input class="sv-in" name="deposit" inputmode="decimal" value="500"></label>
+        <label class="sv-fld"><span>Deposit from</span><select class="sv-in" name="fromAccountId">${fromOpts()}</select></label>` : ''}
+      <div class="sv-row wide"><a class="btn sv-btn ghost" href="/app/cards">No thanks</a><button class="btn sv-btn pri">Accept offer</button></div>
+      <p class="sv-muted wide">Offer good until ${esc(o.expiresOn)}.</p></form>` : ''}
+    ${!a.accountId && a.decision !== 'counteroffer' ? '<p class="c-mt"><a href="/app/cards">Back to your cards</a></p>' : ''}
+  </section>`;
+  $('#flow').hidden = true;
+  $('#result').scrollIntoView({ block: 'start' });
+  const acc = $('#accept');
+  if (acc) acc.onsubmit = async e => {
+    e.preventDefault(); const b = acc.querySelector('button.pri'); b.disabled = true;
+    try { showDecision((await api('POST', `/api/cards/applications/${a.id}/accept`, Object.fromEntries(new FormData(acc)))).application); }
+    catch (err) { if (err.code !== 'cancelled') $('#err').textContent = err.message; }
+    finally { if (b.isConnected) b.disabled = false; }
+  };
+}
+
+try {
+  const [cards, ps, me] = await Promise.all([api('GET', '/api/cards'), api('GET', '/api/cards/products'), api('GET', '/api/me')]);
+  products = ps.products;
+  funding = me.accounts.filter(a => ['checking', 'savings', 'money_market', 'teen_checking', 'custodial_savings'].includes(a.kind) && ['owner', 'joint_owner'].includes(a.role));
+  const offer = new URLSearchParams(location.search).get('offer');
+  if (!cards.canApply) $('#result').innerHTML = '<section class="sv-card sv-pad"><h2>Credit cards are for customers 18 and older</h2><p class="sv-muted">A parent or guardian can manage a debit card for you. <a href="/app/cards">See your cards</a>.</p></section>';
+  else if (offer) showDecision((await api('GET', `/api/cards/applications/${encodeURIComponent(offer)}`)).application);
+  else {
+    $('#flow').hidden = false;
+    $('#lineup').innerHTML = products.map(p => `<div class="prod-tile" data-code="${esc(p.code)}" aria-pressed="false">
+      ${cardArt({ kind: p.kind, name: p.name, last4: '••••', holder: '', exp: '', small: true })}
+      <h3>${esc(p.name)}</h3><p class="sv-muted">${esc(p.tagline)}</p>
+      <ul><li>${esc(p.rewardsText)}</li><li>${esc(p.aprMin)}%${p.aprMax !== p.aprMin ? `–${esc(p.aprMax)}%` : ''} purchase APR</li>
+        <li>${p.annualFee === '0.00' ? 'No annual fee' : `${money(p.annualFee)} annual fee`}</li><li>${esc(p.introOffer)}</li>
+        ${p.secured ? `<li>Deposit ${money(p.depositMin)}–${money(p.depositMax)} sets your limit</li>` : ''}</ul>
+      <button type="button" class="btn sv-btn ghost" data-pick="${esc(p.code)}">Choose ${esc(p.name)}</button></div>`).join('');
+    $('#prod').innerHTML = products.map(p => `<option value="${esc(p.code)}">${esc(p.name)}</option>`).join('');
+    $('#apply .from').innerHTML = fromOpts();
+    const want = new URLSearchParams(location.search).get('product');
+    pick(products.some(p => p.code === want) ? want : products[0].code);
+  }
+} catch (e) { $('#err').textContent = e.message; }
+
+$('#lineup').addEventListener('click', e => { const b = e.target.closest('[data-pick]'); if (b) { pick(b.dataset.pick); step(2); $('#pq-h').scrollIntoView({ block: 'start', behavior: 'smooth' }); } });
+$('#prod').addEventListener('change', e => pick(e.target.value));
+$('#pq').addEventListener('submit', async e => {
+  e.preventDefault(); $('#err').textContent = '';
+  const v = Object.fromEntries(new FormData(e.target));
+  try {
+    const r = await api('POST', '/api/cards/prequalify', v);
+    step(3);
+    $('#pq-out').innerHTML = `<p class="sv-muted c-mt">Your simulated score: <b>${esc(r.score)}</b>. ${esc(r.scoreNote)}</p><div class="prequal">${r.offers.map(o => `<div class="pq">
+      <span><b>${esc(o.productName)}</b>${o.estimatedLimit ? ` · up to ${money(o.estimatedLimit)}` : ''}${o.estimatedApr ? ` · ${esc(o.estimatedApr)}% APR` : ''}</span>${pill(o.result, RESULT[o.result])}</div>`).join('')}</div>`;
+    $('#apply [name=income]').value = v.income; $('#apply [name=housing]').value = v.housing;
+  } catch (err) { $('#err').textContent = err.message; }
+});
+$('#apply').addEventListener('submit', async e => {
+  e.preventDefault(); $('#err').textContent = '';
+  const f = e.target, v = Object.fromEntries(new FormData(f)), b = f.querySelector('button.pri');
+  const p = products.find(x => x.code === v.productCode);
+  const body = { idempotencyKey: appKey, productCode: v.productCode, income: v.income, housing: v.housing,
+    ...(p.secured ? { deposit: v.deposit, fromAccountId: v.fromAccountId } : v.requestedLimit ? { requestedLimit: v.requestedLimit } : {}) };
+  b.disabled = true;
+  try { const r = await api('POST', '/api/cards/applications', body); appKey = newKey(); showDecision(r.application); }
+  catch (err) { if (err.code !== 'cancelled') $('#err').textContent = err.message; }
+  finally { b.disabled = false; }
+});
+</script>
+</body>
+</html>

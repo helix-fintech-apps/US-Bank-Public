@@ -1,0 +1,109 @@
+/* Open an account + Family (USA Banc demo). Builds on site.css + auth.css + servicing.css (same header, pills, cards and fields). */
+.sv-h + .err, .sv-h + .err + * { margin-top: 14px; }
+.sv-h p { max-width: 720px; }
+.af-card { background: #fff; border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 20px; min-width: 0; }
+.af-card h2 { font-size: 18px; margin: 0 0 4px; }
+.af-card h3 { font-size: 16px; margin: 0 0 10px; }
+.af-card .sub { font-size: 14px; }
+.af-sim { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .02em; color: #7a4b00; background: #fff4dc; border: 1px solid #f3d9a4; border-radius: 999px; padding: 2px 10px; }
+.af-note { font-size: 13px; color: var(--brand); background: var(--brand-soft); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
+.af-note b { font-weight: 700; }
+
+/* form bits */
+.af-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; }
+.af-grid .full { grid-column: 1 / -1; }
+.af-f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.af-f > span { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .02em; }
+.af-f input, .af-f select { font: inherit; font-size: 15px; height: 42px; border: 1.5px solid var(--line); border-radius: 10px; padding: 0 12px; background: #fff; color: var(--ink); width: 100%; min-width: 0; }
+.af-f input:focus, .af-f select:focus { outline: none; border-color: var(--brand-2); box-shadow: 0 0 0 3px rgba(26,86,184,.15); }
+.af-f small { color: var(--muted); font-size: 12px; }
+.af-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 18px; }
+.af-actions .btn { height: 40px; padding: 0 16px; font-size: 14px; }
+.btn.sm { height: 36px; padding: 0 14px; font-size: 14px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.warn { border-color: #b42318; color: #b42318; }
+.af-err { color: #b42318; font-weight: 600; font-size: 14px; min-height: 1px; margin: 8px 0 0; }
+.af-ok { color: #157347; font-weight: 600; font-size: 14px; min-height: 1px; margin: 8px 0 0; }
+
+/* steps */
+.af-steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0 0 18px; flex-wrap: wrap; }
+.af-steps li { font-size: 13px; font-weight: 700; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; }
+.af-steps li[aria-current="step"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+.af-steps li.done { color: var(--brand-2); border-color: #bcd3f5; background: var(--brand-soft); }
+fieldset.af-step { border: 0; padding: 0; margin: 0; min-width: 0; }
+fieldset.af-step legend { font-size: 18px; font-weight: 800; margin-bottom: 4px; padding: 0; }
+
+/* product chooser */
+.af-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin: 14px 0 6px; }
+.af-prod { position: relative; display: flex; flex-direction: column; gap: 3px; border: 1.5px solid var(--line); border-radius: 12px; padding: 14px 16px; cursor: pointer; background: #fff; min-width: 0; }
+.af-prod input { position: absolute; opacity: 0; pointer-events: none; }
+.af-prod:hover { border-color: var(--brand-2); }
+.af-prod:has(input:checked) { border-color: var(--brand-2); box-shadow: 0 0 0 2px rgba(26,86,184,.25); background: #fbfdff; }
+.af-prod:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.af-prod .nm { font-weight: 800; }
+.af-prod .rate { font-size: 14px; color: var(--brand-2); font-weight: 700; }
+.af-prod .bl { font-size: 13px; color: var(--muted); }
+.af-group { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 16px 0 0; }
+.af-radios { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.af-radios label { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+.af-radios input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--brand-2); flex: none; }
+.af-sub { margin: 4px 0 6px 28px; }
+
+/* disclosures + result */
+.af-docs { list-style: none; padding: 0; margin: 12px 0; border: 1px solid var(--line); border-radius: 12px; }
+.af-docs li { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.af-docs li:last-child { border-bottom: 0; }
+.af-docs b { display: block; }
+.af-check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+.af-check input { width: 20px; height: 20px; accent-color: var(--brand-2); flex: none; margin-top: 2px; }
+.af-badge { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 3px 10px; }
+.af-badge.approved, .af-badge.accepted, .af-badge.paid, .af-badge.on { background: #e3f4ea; color: #157347; }
+.af-badge.review, .af-badge.pending, .af-badge.submitted { background: #fff4dc; color: #7a4b00; }
+.af-badge.declined, .af-badge.skipped, .af-badge.frozen { background: #fde8e7; color: #b42318; }
+.af-badge.open { background: var(--brand-soft); color: var(--brand-2); }
+.af-result h2 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.af-reasons { margin: 8px 0; padding-left: 20px; }
+.af-list { list-style: none; padding: 0; margin: 0; }
+.af-list > li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px; min-width: 0; }
+.af-list > li:last-child { border-bottom: 0; }
+.af-list .grow { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.af-list .dt { color: var(--muted); font-size: 13px; }
+
+/* family */
+.fam-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.fam-head .bal { font-size: 28px; font-weight: 800; }
+.fam-head .who { color: var(--muted); font-size: 14px; }
+.fam-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.fam-panel { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; min-width: 0; }
+.fam-panel.wide { grid-column: 1 / -1; }
+.seg { display: inline-flex; border: 1.5px solid var(--brand-2); border-radius: 999px; overflow: hidden; }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; border: 0; background: #fff; color: var(--brand-2); padding: 7px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--brand-2); color: #fff; }
+.meter { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: 6px 0 2px; }
+.meter > i { display: block; height: 100%; background: linear-gradient(90deg, #1a56b8, #7cc0ff); }
+.cats { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.cats label { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 14px; cursor: pointer; }
+.cats input { accent-color: #b42318; }
+.cats label:has(input:checked) { border-color: #f1b1ab; background: #fdf1f0; }
+.fam-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; }
+.fam-row .af-f { flex: 1 1 120px; }
+.fam-row .btn { height: 42px; padding: 0 16px; font-size: 14px; }
+.fam-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 8px; }
+.fam-stats div { background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--muted); }
+.fam-stats b { display: block; font-size: 18px; color: var(--ink); }
+.fam-empty { text-align: center; padding: 34px 20px; }
+@media (max-width: 760px) {
+  .af-grid, .fam-panels { grid-template-columns: minmax(0, 1fr); }
+  .af-card { padding: 18px 16px; }
+  .af-actions .btn { flex: 1 1 auto; }
+}
+.dash [hidden] { display: none !important; }        /* .btn / grid display rules must not show hidden parts */
+.af-list > li.goal { display: block; }
+.meter { display: block; }
+.goal .fam-row { margin-top: 6px; align-items: center; }
+.sa-amt { width: 96px; height: 36px; border: 1.5px solid var(--line); border-radius: 8px; padding: 0 8px; font: inherit; font-size: 14px; }
+.nowrap { white-space: nowrap; }
+
+/* shared accounts (family page) */
+.fam-shared .af-list > li { padding: 10px 0; }
+.fam-shared .bal-s { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }

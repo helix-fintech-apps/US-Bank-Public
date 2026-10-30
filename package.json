@@ -1,0 +1,23 @@
+{
+  "name": "usa-banc",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "serve": "node tests/serve.mjs",
+    "lint": "node tests/lint.mjs",
+    "test:api": "node --test --test-concurrency=1 tests/api/*.test.mjs",
+    "test:browser": "node tests/smoke.mjs",
+    "test": "npm run test:api && npm run test:browser",
+    "check": "npm run lint && npm test"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  },
+  "dependencies": {
+    "pdf-lib": "1.17.1",
+    "pg": "8.13.1"
+  }
+}

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Activity | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=2" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="sv-h"><div><h1>Activity</h1><p>Search every account you can see. Change a category to make your insights fit you.</p></div></div>
+  <p class="err" id="err" role="alert"></p>
+  <div class="sv-grid">
+    <div>
+      <form class="sv-card sv-pad" id="filters" role="search" aria-label="Search activity">
+        <div class="sv-search">
+          <label class="sv-fld"><span>Search descriptions</span><input class="sv-in" id="f-q" name="q" type="search" maxlength="100" placeholder="e.g. payroll, coffee"></label>
+          <button class="btn pri sv-btn" style="align-self:flex-end">Search</button>
+        </div>
+        <details class="sv-more" id="more"><summary>More filters</summary>
+          <div class="sv-form">
+            <label class="sv-fld"><span>Account</span><select class="sv-in" id="f-account" name="account"><option value="">All accounts</option></select></label>
+            <label class="sv-fld"><span>Money in or out</span><select class="sv-in" id="f-dir" name="dir"><option value="">Both</option><option value="in">Money in</option><option value="out">Money out</option></select></label>
+            <label class="sv-fld"><span>Category</span><select class="sv-in" id="f-category" name="category"><option value="">All categories</option></select></label>
+            <label class="sv-fld"><span>From</span><input class="sv-in" id="f-from" name="from" type="date"></label>
+            <label class="sv-fld"><span>To</span><input class="sv-in" id="f-to" name="to" type="date"></label>
+            <label class="sv-fld"><span>Smallest amount ($)</span><input class="sv-in" id="f-min" name="min" inputmode="decimal" placeholder="0.00"></label>
+            <label class="sv-fld"><span>Largest amount ($)</span><input class="sv-in" id="f-max" name="max" inputmode="decimal" placeholder="Any"></label>
+            <div class="sv-fld" style="justify-content:flex-end"><button type="button" class="btn sv-btn ghost" id="clear">Clear filters</button></div>
+          </div>
+        </details>
+      </form>
+      <section class="sv-card" aria-labelledby="list-h" style="margin-top:20px">
+        <header><h2 id="list-h">Transactions</h2><span class="sv-muted" id="count" aria-live="polite"></span></header>
+        <ul class="sv-list" id="list" aria-live="polite"><li class="sv-empty">Loading…</li></ul>
+        <div class="sv-foot" id="foot" hidden><button class="btn sv-btn ghost" id="loadmore">Show more</button></div>
+      </section>
+    </div>
+    <aside class="sv-card" aria-labelledby="ins-h">
+      <header><h2 id="ins-h">Spending insights</h2><select class="sv-in" id="month" aria-label="Month" style="width:auto;height:34px;font-size:14px"></select></header>
+      <div class="sv-pad">
+        <p class="sv-muted">Spent this month (transfers between accounts left out)</p>
+        <p class="sv-big" id="spent">…</p>
+        <p class="sv-muted" id="moneyin"></p>
+        <ul class="sv-bars" id="bars"></ul>
+        <h3 style="font-size:14px;margin-top:20px">Last 6 months</h3>
+        <div class="sv-trend" id="trend" aria-label="Spending by month"></div>
+      </div>
+    </aside>
+  </div>
+</div></main>
+<script type="module">
+import { api, shell, money, esc } from '/assets/client.js';
+import { subnav, day, monthName } from '/assets/servicing.js';
+shell('/app/activity'); subnav('/app/activity');
+const $ = s => document.querySelector(s);
+let cats = [], cursor = null, shown = 0;
+
+const params = () => {
+  const p = new URLSearchParams();
+  for (const k of ['q', 'account', 'dir', 'category', 'from', 'to', 'min', 'max']) { const v = $('#f-' + k).value.trim(); if (v) p.set(k, v); }
+  return p;
+};
+const row = t => `<li data-id="${esc(t.id)}"><div><div class="d">${esc(t.description)}</div>
+    <div class="m"><span>${day(t.postedOn)} · ${esc(t.account.name)} ··${esc(t.account.last4)}</span>
+    <select class="sv-cat${t.overridden ? ' over' : ''}" aria-label="Category for ${esc(t.description)}" title="${t.overridden ? 'Your category (was ' + esc(t.originalCategory) + ')' : 'Change category'}">
+      ${[...new Set([...cats, t.category])].map(c => `<option${c === t.category ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></div></div>
+    <div class="a ${t.amount.startsWith('-') ? '' : 'pos'}">${t.amount.startsWith('-') ? '' : '+'}${money(t.amount)}</div></li>`;
+
+async function load(more = false) {
+  $('#err').textContent = '';
+  const p = params(); p.set('limit', '25'); if (more && cursor) p.set('cursor', cursor);
+  try {
+    const r = await api('GET', '/api/activity?' + p);
+    if (!cats.length) {
+      cats = r.categories;
+      $('#f-category').insertAdjacentHTML('beforeend', [...cats, 'Uncategorized'].map(c => `<option>${esc(c)}</option>`).join(''));
+      $('#f-account').insertAdjacentHTML('beforeend', r.accounts.map(a => `<option value="${esc(a.id)}">${esc(a.name)} ··${esc(a.last4)}</option>`).join(''));
+    }
+    const html = r.transactions.map(row).join('');
+    if (more) $('#list').insertAdjacentHTML('beforeend', html); else $('#list').innerHTML = html || '<li class="sv-empty">No transactions match. Try fewer filters.</li>';
+    shown = (more ? shown : 0) + r.transactions.length;
+    cursor = r.nextCursor; $('#foot').hidden = !cursor;
+    $('#count').textContent = `${shown} shown${cursor ? ', more available' : ''}`;
+  } catch (e) { $('#err').textContent = e.message; }
+}
+
+async function insights() {
+  const m = $('#month').value, acct = $('#f-account').value;
+  try {
+    const r = await api('GET', '/api/insights?' + new URLSearchParams({ ...(m ? { month: m } : {}), ...(acct ? { account: acct } : {}) }));
+    if (!$('#month').options.length) $('#month').innerHTML = r.trend.slice().reverse().map(t => `<option value="${esc(t.month)}">${esc(monthName(t.month))}</option>`).join('');
+    $('#spent').textContent = money(r.spending);
+    $('#moneyin').textContent = `Money in: ${money(r.moneyIn)}`;
+    $('#bars').innerHTML = r.categories.map(c => `<li><span>${esc(c.category)}</span><span class="v">${money(c.amount)}</span><span class="bar"><i style="width:${Math.max(2, c.pct)}%"></i></span></li>`).join('') || '<li class="sv-muted">No spending this month.</li>';
+    $('#trend').innerHTML = r.trend.map(t => `<div class="${t.month === r.month ? 'on' : ''}" title="${esc(monthName(t.month))}: ${money(t.spending)}"><i style="height:${Math.max(3, t.pct)}%"></i>${esc(monthName(t.month).slice(0, 3))}</div>`).join('');
+  } catch (e) { $('#err').textContent = e.message; }
+}
+
+$('#filters').addEventListener('submit', e => { e.preventDefault(); load(); });
+for (const id of ['#f-account', '#f-dir', '#f-category', '#f-from', '#f-to']) $(id).addEventListener('change', () => { load(); if (id === '#f-account') insights(); });
+$('#clear').onclick = () => { $('#filters').reset(); load(); insights(); };
+$('#loadmore').onclick = () => load(true);
+$('#month').addEventListener('change', insights);
+$('#list').addEventListener('change', async e => {
+  const sel = e.target.closest('.sv-cat'); if (!sel) return;
+  const li = sel.closest('li');
+  sel.disabled = true;
+  try {
+    const r = await api('PUT', `/api/activity/${encodeURIComponent(li.dataset.id)}/category`, { category: sel.value });
+    sel.classList.toggle('over', r.overridden);
+    sel.title = r.overridden ? `Your category (was ${r.originalCategory})` : 'Change category';
+    insights();
+  } catch (err) { $('#err').textContent = err.message; }
+  finally { sel.disabled = false; }
+});
+const q = new URLSearchParams(location.search).get('q'); if (q) $('#f-q').value = q;
+load(); insights();
+</script>
+</body>
+</html>

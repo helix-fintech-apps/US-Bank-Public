@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Open an account | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+<link rel="stylesheet" href="/assets/accounts-family.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="sv-h"><div><h1>Open an account</h1><p>Checking, savings, money market and CDs, on your own, jointly, or for a child. It takes about 5 minutes.</p></div>
+    <span class="af-sim">Simulated: no real identity check or credit bureau</span></div>
+  <p class="err" id="err" role="alert"></p>
+  <div id="invites"></div>
+  <div id="minor-note" hidden class="af-card"><h2>Ask a parent or guardian</h2><p class="sub">You must be 18 or older to open an account. A parent or guardian can open Teen Checking or Custodial Savings for you.</p></div>
+
+  <form class="af-card" id="apply" novalidate hidden>
+    <ol class="af-steps" id="steps"><li>1. Account</li><li>2. About you</li><li>3. Opening deposit</li><li>4. Review &amp; sign</li></ol>
+
+    <fieldset class="af-step" data-step="0">
+      <legend>Choose an account</legend>
+      <p class="sub">Rates are demo values. APY = annual percentage yield.</p>
+      <p class="af-group">For you</p><div class="af-products" id="p-adult"></div>
+      <p class="af-group">For a child</p><div class="af-products" id="p-minor"></div>
+      <div id="own-adult" hidden>
+        <h3 style="margin-top:16px">Who will own it?</h3>
+        <div class="af-radios">
+          <label><input type="radio" name="ownership" value="solo" checked> Just me</label>
+          <label id="joint-opt"><input type="radio" name="ownership" value="joint"> Me and someone else (joint). They accept on their side.</label>
+        </div>
+        <div class="af-sub af-grid" id="joint-box" hidden>
+          <label class="af-f full"><span>Co-owner's USA Banc username</span><input id="co-owner" type="email" autocomplete="off" placeholder="name@example.com"><small>We'll ask for a one-time code before we invite them.</small></label>
+        </div>
+      </div>
+      <div id="own-minor" hidden>
+        <h3 style="margin-top:16px">Who is it for?</h3>
+        <div class="af-radios" id="minor-choices"></div>
+        <div class="af-sub af-grid" id="m-login" hidden>
+          <label class="af-f"><span>Teen's USA Banc username</span><input id="m-user" type="email" autocomplete="off"></label>
+          <label class="af-f"><span>Their date of birth</span><input id="m-dob1" type="date"></label>
+        </div>
+        <div class="af-sub af-grid" id="m-new" hidden>
+          <label class="af-f"><span>Child's full name</span><input id="m-name" autocomplete="off"></label>
+          <label class="af-f"><span>Child's date of birth</span><input id="m-dob2" type="date"></label>
+          <label class="af-f"><span>You are their</span><select id="m-rel"><option value="parent">Parent</option><option value="guardian">Legal guardian</option></select></label>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="af-step" data-step="1" hidden>
+      <legend>About you</legend>
+      <p class="sub">Federal law asks every bank to confirm who opens an account (the Customer Identification Program).</p>
+      <div class="af-grid" style="margin-top:12px">
+        <label class="af-f full"><span>Legal name</span><input id="legalName" autocomplete="name"></label>
+        <label class="af-f"><span>Date of birth</span><input id="dob" type="date" autocomplete="bday"></label>
+        <label class="af-f"><span>Social Security number</span><input id="ssn" inputmode="numeric" autocomplete="off" placeholder="9 digits" maxlength="11"><small>We keep only the last 4 digits.</small></label>
+        <label class="af-f full"><span>Home street address (no PO boxes)</span><input id="line1" autocomplete="address-line1"></label>
+        <label class="af-f full"><span>Apt, suite (optional)</span><input id="line2" autocomplete="address-line2"></label>
+        <label class="af-f"><span>City</span><input id="city" autocomplete="address-level2"></label>
+        <label class="af-f"><span>State</span><select id="state" autocomplete="address-level1"></select></label>
+        <label class="af-f"><span>ZIP code</span><input id="zip" inputmode="numeric" autocomplete="postal-code" maxlength="10"></label>
+      </div>
+      <p class="af-note"><b>Simulated identity check and OFAC screen.</b> Nothing is sent to a real vendor or watch list. To try other outcomes: a name containing <b>TEST OFAC</b> goes to manual review; a name containing <b>TEST DECLINE</b>, or the Social Security number <b>123-45-6789</b>, is declined.</p>
+    </fieldset>
+
+    <fieldset class="af-step" data-step="2" hidden>
+      <legend>Opening deposit</legend>
+      <p class="sub" id="min-note"></p>
+      <div class="af-grid" style="margin-top:12px">
+        <label class="af-f"><span>Move money from</span><select id="from"></select></label>
+        <label class="af-f"><span>Amount</span><input id="amount" inputmode="decimal" placeholder="0.00"></label>
+      </div>
+      <p class="af-note">The deposit moves right away from your USA Banc account (simulated: no real money moves).</p>
+    </fieldset>
+
+    <fieldset class="af-step" data-step="3" hidden>
+      <legend>Review and sign</legend>
+      <ul class="af-list" id="review"></ul>
+      <h3 style="margin-top:16px">Disclosures <span class="af-sim">Demo documents</span></h3>
+      <ul class="af-docs" id="docs"></ul>
+      <label class="af-check"><input type="checkbox" id="esign"> <span>I've read these disclosures (version <b id="ver"></b>) and I sign them electronically.</span></label>
+    </fieldset>
+
+    <p class="af-err" id="form-err" role="alert"></p>
+    <div class="af-actions"><button type="button" class="btn" id="back" hidden>Back</button><button class="btn pri" id="next">Continue</button></div>
+  </form>
+
+  <section class="af-card af-result" id="result" hidden aria-live="polite"></section>
+  <section class="af-card" id="history" hidden><h2>Your applications</h2><ul class="af-list" id="apps"></ul></section>
+</div></main>
+<script type="module">
+import { api, shell, money, esc, newKey } from '/assets/client.js';
+import { subnav } from '/assets/accounts-family.js';
+shell('/app/open');
+subnav('/app/open');
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const STATES = 'AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY PR'.split(' ');
+const STATE_WORDS = { approved: 'Approved', review: 'In review', declined: 'Declined', accepted: 'Accepted', pending: 'Waiting for them' };
+let products = [], version = '', ctx = null, step = 0, key = newKey();
+const prod = () => products.find(p => p.code === $('input[name=product]:checked')?.value);
+const ownership = () => (prod()?.ownerships.includes('minor') ? 'minor' : $('input[name=ownership]:checked').value);
+const rate = p => [p.apy ? `${esc(p.apy)}% APY` : 'No interest', p.termMonths ? `${p.termMonths}-month term` : '', `${money(p.minOpen)} to open`].filter(Boolean).join(' · ');
+
+function productCard(p) {
+  return `<label class="af-prod"><input type="radio" name="product" value="${esc(p.code)}"><span class="nm">${esc(p.name)}</span>
+    <span class="rate">${rate(p)}</span><span class="bl">${esc(p.blurb)}${p.earlyWithdrawalDays ? ` Early withdrawal: ${p.earlyWithdrawalDays} days' interest.` : ''}</span></label>`;
+}
+function identityFields() {
+  return `<div class="af-grid" style="margin-top:12px">
+    <label class="af-f full"><span>Legal name</span><input data-k="legalName" autocomplete="name"></label>
+    <label class="af-f"><span>Date of birth</span><input data-k="dob" type="date"></label>
+    <label class="af-f"><span>Social Security number</span><input data-k="ssn" inputmode="numeric" maxlength="11" autocomplete="off"></label>
+    <label class="af-f full"><span>Home street address</span><input data-k="line1"></label>
+    <label class="af-f"><span>City</span><input data-k="city"></label>
+    <label class="af-f"><span>State</span><select data-k="state">${STATES.map(s => `<option>${s}</option>`).join('')}</select></label>
+    <label class="af-f"><span>ZIP code</span><input data-k="zip" inputmode="numeric" maxlength="10"></label></div>`;
+}
+const readFields = root => Object.fromEntries([...root.querySelectorAll('[data-k]')].map(i => [i.dataset.k, i.value.trim()]));
+
+function showStep(n) {
+  step = n;
+  $$('fieldset.af-step').forEach(f => { f.hidden = Number(f.dataset.step) !== n; });
+  $$('#steps li').forEach((li, i) => { if (i === n) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current'); li.classList.toggle('done', i < n); });
+  $('#back').hidden = n === 0;
+  $('#next').textContent = n === 3 ? 'Open account' : 'Continue';
+  $('#form-err').textContent = '';
+  if (n === 2) {
+    const p = prod();
+    $('#min-note').textContent = `${p.name} needs at least ${money(p.minOpen)} to open.`;
+    if (!$('#amount').value) $('#amount').value = p.minOpen;
+  }
+  if (n === 3) review();
+  $('#apply').scrollIntoView({ block: 'start', behavior: 'instant' });
+}
+
+// Links from the public pages: /app/open?product=checking|savings|money_market|cd|joint|custodial|teen (or a product code).
+const PRODUCT_LINKS = { checking: ['smart_checking'], savings: ['bright_savings'], money_market: ['premier_mm'], cd: ['cd_12'],
+  joint: ['smart_checking', 'joint'], custodial: ['custodial_savings'], teen: ['teen_checking'] };
+function preselect(q) {
+  const [code, own] = PRODUCT_LINKS[q.get('product')] ?? [q.get('product')];
+  const pick = (code && document.querySelector(`input[name=product][value="${CSS.escape(code)}"]`))
+    ?? document.querySelector(q.get('for') === 'child' ? '#p-minor input' : '#p-adult input');
+  if (pick) pick.checked = true;
+  if (own === 'joint') { const j = document.querySelector('input[name=ownership][value=joint]'); if (j) j.checked = true; }
+}
+
+function syncOwnership() {
+  const p = prod(); if (!p) return;
+  const minor = p.ownerships.includes('minor');
+  $('#own-adult').hidden = minor; $('#own-minor').hidden = !minor;
+  $('#joint-opt').hidden = !p.ownerships.includes('joint');
+  if (!p.ownerships.includes('joint')) $('input[name=ownership][value=solo]').checked = true;
+  $('#joint-box').hidden = minor || ownership() !== 'joint';
+  if (minor) {
+    const custodial = p.kind === 'custodial_savings';
+    const kids = ctx.minors.filter(m => (custodial || m.hasLogin) && m.age >= p.minorAges[0] && m.age <= p.minorAges[1]);
+    $('#minor-choices').innerHTML = kids.map((m, i) => `<label><input type="radio" name="minor" value="${esc(m.id)}"${i ? '' : ' checked'}> ${esc(m.name)}, age ${m.age}</label>`).join('')
+      + `<label><input type="radio" name="minor" value="login"${kids.length ? '' : ' checked'}> A teen who has their own USA Banc login</label>`
+      + (custodial ? `<label><input type="radio" name="minor" value="new"> A child who isn't a customer yet (no login needed)</label>` : '');
+    syncMinor();
+  }
+}
+function syncMinor() {
+  const v = $('input[name=minor]:checked')?.value;
+  $('#m-login').hidden = v !== 'login'; $('#m-new').hidden = v !== 'new';
+}
+
+function minorBody() {
+  const v = $('input[name=minor]:checked')?.value;
+  if (v === 'login') return { username: $('#m-user').value.trim(), dob: $('#m-dob1').value };
+  if (v === 'new') return { name: $('#m-name').value.trim(), dob: $('#m-dob2').value, relationship: $('#m-rel').value };
+  return { id: v };
+}
+const identity = () => ({ legalName: $('#legalName').value.trim(), dob: $('#dob').value, ssn: $('#ssn').value.trim(), line1: $('#line1').value.trim(),
+  line2: $('#line2').value.trim(), city: $('#city').value.trim(), state: $('#state').value, zip: $('#zip').value.trim() });
+const lastFour = s => s.replace(/\D/g, '').slice(-4);
+
+/** "1,234.5" -> 123450n for comparing two amounts only (no arithmetic on money in the browser); null if it is not an amount. */
+function centsOf(s) {
+  const m = /^(\d{1,12})(?:\.(\d{1,2}))?$/.exec(String(s ?? '').trim().replace(/^\$/, '').replace(/,/g, ''));
+  return m ? BigInt(m[1]) * 100n + BigInt((m[2] ?? '').padEnd(2, '0') || '0') : null;
+}
+function check(n) {
+  if (n === 0) {
+    if (!prod()) return 'Choose an account.';
+    if (ownership() === 'joint' && !$('#co-owner').value.trim()) return "Enter your co-owner's username.";
+    const m = ownership() === 'minor' && minorBody();
+    if (m && 'username' in m && (!m.username || !m.dob)) return "Enter the teen's username and date of birth.";
+    if (m && 'name' in m && (!m.name || !m.dob)) return "Enter the child's name and date of birth.";
+  }
+  if (n === 1) { const i = identity(); if (!i.legalName || !i.dob || !i.ssn || !i.line1 || !i.city || !i.zip) return 'Fill in every field (apartment is optional).'; }
+  if (n === 2 && (!$('#from').value || !$('#amount').value.trim())) return 'Choose an account and an amount.';
+  if (n === 2) {                                                          // the product minimum, before the last step (the server still decides)
+    const p = prod(), got = centsOf($('#amount').value), min = centsOf(p.minOpen);
+    if (got != null && min != null && got < min) return `Opening deposit must be at least ${money(p.minOpen)}.`;
+  }
+  if (n === 3 && !$('#esign').checked) return 'Read and accept the disclosures to continue.';
+  return '';
+}
+
+async function review() {
+  const p = prod(), i = identity(), own = ownership(), from = ctx.fundingAccounts.find(a => a.id === $('#from').value);
+  const who = own === 'joint' ? `Joint with ${esc($('#co-owner').value.trim())}` : own === 'minor' ? 'For a child (you manage it)' : 'Just you';
+  $('#review').innerHTML = [['Account', esc(p.name)], ['Rate', rate(p)], ['Owner', who], ['Name', esc(i.legalName)], ['SSN', `···-··-${esc(lastFour(i.ssn))}`],
+    ['Opening deposit', `${money($('#amount').value.replace(/[$,]/g, '') || '0')} from ${esc(from?.name ?? '')} ··${esc(from?.last4 ?? '')}`]]
+    .map(([k, v]) => `<li><span class="dt">${k}</span><span>${v}</span></li>`).join('');
+  try {
+    const d = await api('GET', `/api/disclosures?product=${encodeURIComponent(p.code)}&ownership=${own}`);
+    version = d.version; $('#ver').textContent = d.version;
+    $('#docs').innerHTML = d.documents.map(x => `<li><b>${esc(x.title)}</b>${esc(x.summary)}</li>`).join('');
+  } catch (e) { $('#form-err').textContent = e.message; }
+}
+
+async function submit() {
+  const own = ownership(), body = { idempotencyKey: key, product: prod().code, ownership: own, identity: identity(),
+    funding: { fromAccountId: $('#from').value, amount: $('#amount').value.trim() }, disclosures: { version, accepted: $('#esign').checked } };
+  if (own === 'joint') body.coOwner = $('#co-owner').value.trim();
+  if (own === 'minor') body.minor = minorBody();
+  $('#next').disabled = true;
+  try {
+    const r = await api('POST', '/api/applications', body);
+    key = newKey();                                                                 // the next application is a new request
+    showResult(r);
+  } catch (e) { $('#form-err').textContent = e.code === 'cancelled' ? 'You need to confirm the code to add a joint owner.' : e.message; }
+  finally { $('#next').disabled = false; }
+}
+
+function showResult(r) {
+  $('#apply').hidden = true;
+  const a = r.account;
+  $('#result').hidden = false;
+  $('#result').innerHTML = `<h2>${esc(r.product.name)} <span class="af-badge ${esc(r.state)}" id="result-state">${esc(STATE_WORDS[r.state] ?? r.state)}</span></h2>
+    ${r.state === 'approved' ? `<p>Your new account <b>${esc(a.name)} ··${esc(a.last4)}</b> is open with ${money(a.balance)}.${a.maturityDate ? ` It matures on ${esc(a.maturityDate)}.` : ''}</p>` : ''}
+    ${r.reasons.length ? `<ul class="af-reasons">${r.reasons.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${r.state === 'review' ? '<p class="sub">No money moved. We\'ll let you know the outcome (simulated: a banker never actually calls).</p>' : ''}
+    ${r.state === 'declined' ? '<p class="sub">No money moved and no account was opened.</p>' : ''}
+    ${r.coOwner ? `<p>We invited <b>${esc(r.coOwner.username)}</b> to be a joint owner. They accept from their own Open an account page.</p>` : ''}
+    ${r.minorName ? `<p>Set up spending limits, an allowance and chores for ${esc(r.minorName)} on the <a href="/app/family">Family</a> page.</p>` : ''}
+    <div class="af-actions"><a class="btn" href="/app">Go to accounts</a><button class="btn pri" type="button" id="again">Open another account</button></div>`;
+  $('#again').onclick = () => location.reload();
+  loadHistory();
+}
+
+async function loadHistory() {
+  try {
+    const r = await api('GET', '/api/applications');
+    $('#history').hidden = !r.applications.length;
+    $('#apps').innerHTML = r.applications.map(x => `<li><span class="grow">${esc(x.product.name)}${x.account ? ` ··${esc(x.account.last4)}` : ''}
+      <span class="dt">· ${esc(new Date(x.createdAt).toLocaleDateString('en-US'))}${x.coOwner ? ` · joint with ${esc(x.coOwner.username)} (${esc(STATE_WORDS[x.coOwner.status] ?? x.coOwner.status)})` : ''}${x.minorName ? ` · for ${esc(x.minorName)}` : ''}</span></span>
+      <span class="af-badge ${esc(x.state)}">${esc(STATE_WORDS[x.state])}</span></li>`).join('');
+  } catch {}
+}
+
+function renderInvites(list) {
+  $('#invites').innerHTML = list.map(i => `<section class="af-card invite" data-id="${esc(i.id)}">
+    <h2>${esc(i.inviter)} invited you to a joint account</h2>
+    <p class="sub">${esc(i.account.name)} ··${esc(i.account.last4)}. As a joint owner you can use all the money in it. To accept, confirm who you are and sign the joint ownership terms. <span class="af-sim">Simulated identity check</span></p>
+    <div class="inv-form" hidden>${identityFields()}
+      <label class="af-check" style="margin-top:14px"><input type="checkbox" class="inv-esign"> <span>I accept the joint ownership terms and the account disclosures and sign them electronically.</span></label></div>
+    <p class="af-err" role="alert"></p>
+    <div class="af-actions"><button type="button" class="btn inv-no">Decline</button><button type="button" class="btn pri inv-yes">Accept</button></div></section>`).join('');
+  for (const card of $$('.invite')) {
+    const err = card.querySelector('.af-err'), form = card.querySelector('.inv-form');
+    card.querySelector('.inv-no').onclick = async () => {
+      try { await api('POST', `/api/invites/${card.dataset.id}/decline`, {}); card.innerHTML = '<p>You declined the invitation.</p>'; } catch (e) { err.textContent = e.message; }
+    };
+    card.querySelector('.inv-yes').onclick = async () => {
+      if (form.hidden) { form.hidden = false; card.querySelector('.inv-yes').textContent = 'Confirm and accept'; return; }
+      try {
+        const r = await api('POST', `/api/invites/${card.dataset.id}/accept`, { identity: readFields(form), disclosures: { version: ctx.version, accepted: card.querySelector('.inv-esign').checked } });
+        card.innerHTML = `<h2>Joint account <span class="af-badge ${esc(r.state)}">${esc(STATE_WORDS[r.state])}</span></h2>
+          ${r.account ? `<p>You're now a joint owner of <b>${esc(r.account.name)} ··${esc(r.account.last4)}</b>. <a href="/app">See it in your accounts</a>.</p>` : ''}
+          ${r.reasons.length ? `<ul class="af-reasons">${r.reasons.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}`;
+      } catch (e) { err.textContent = e.message; }
+    };
+  }
+}
+
+try {
+  const [p, a] = await Promise.all([api('GET', '/api/products'), api('GET', '/api/applications')]);
+  products = p.products; ctx = { ...a, version: p.disclosureVersion };
+  renderInvites(a.invites);
+  loadHistory();
+  if (a.isMinor) { $('#minor-note').hidden = false; }
+  else {
+    $('#p-adult').innerHTML = products.filter(x => !x.ownerships.includes('minor')).map(productCard).join('');
+    $('#p-minor').innerHTML = products.filter(x => x.ownerships.includes('minor')).map(productCard).join('');
+    $('#state').innerHTML = STATES.map(s => `<option>${s}</option>`).join('');
+    $('#from').innerHTML = a.fundingAccounts.map(x => `<option value="${esc(x.id)}">${esc(x.name)} ··${esc(x.last4)} (${money(x.balance)})${x.role === 'custodian' ? ' · child\'s money' : ''}</option>`).join('');
+    preselect(new URLSearchParams(location.search));
+    $('#apply').hidden = false;
+    $('#apply').addEventListener('change', e => { if (e.target.name === 'product' || e.target.name === 'ownership') syncOwnership(); if (e.target.name === 'minor') syncMinor(); });
+    syncOwnership(); showStep(0);
+    $('#back').onclick = () => showStep(step - 1);
+    $('#apply').onsubmit = e => {
+      e.preventDefault();
+      const bad = check(step); if (bad) { $('#form-err').textContent = bad; return; }
+      if (step < 3) showStep(step + 1); else submit();
+    };
+  }
+} catch (e) { $('#err').textContent = e.message; }
+</script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>USA Banc | Personal Banking</title>
+<meta name="description" content="USA Banc personal banking: checking, savings, credit cards, loans and more. A demo bank for testing.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=2" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<div class="demo-note" role="note">USA Banc is a fictional demo bank for testing. It is not a real bank and is not affiliated with any real financial institution. No real money moves.</div>
+
+<div class="util"><div class="wrap">
+  <a href="/about">About us</a><a href="/learn">Financial education</a><a href="/support">Support</a><a href="/locations">Locations</a>
+</div></div>
+
+<header class="top"><div class="wrap">
+  <a class="brand" href="/" aria-label="USA Banc home"><img src="/assets/logo.svg" alt=""><span>USA <b>Banc</b></span></a>
+  <nav class="main" id="nav" aria-label="Main">
+    <div><button aria-expanded="false" aria-controls="m-personal">Personal</button>
+      <div class="mega" id="m-personal" hidden>
+        <div><h4>Checking &amp; savings</h4><a href="/open#checking">Checking accounts</a><a href="/open#savings">Savings accounts</a><a href="/open#money_market">Money market</a><a href="/open#cd">CDs</a><a href="/open#teen">Teen &amp; kids accounts</a></div>
+        <div><h4>Credit cards</h4><a href="/cards">Compare cards</a><a href="/cards#cashback">Cash back</a><a href="/cards#travel">Travel rewards</a><a href="/cards#secured">Secured card</a><a href="/cards#student">Student card</a></div>
+        <div><h4>Loans</h4><a href="/loans#personal">Personal loans</a><a href="/loans#auto">Auto loans</a><a href="/loans#heloc">Home equity</a><a href="/loans#mortgage">Mortgage</a><a href="/credit">Free credit score</a></div>
+      </div></div>
+    <div><button aria-expanded="false" aria-controls="m-family">Family</button>
+      <div class="mega" id="m-family" hidden>
+        <div><h4>Shared banking</h4><a href="/open#joint">Joint accounts</a><a href="/open#family">Family plan</a></div>
+        <div><h4>For kids &amp; teens</h4><a href="/open#teen">Teen checking (13–17)</a><a href="/open#custodial">Custodial savings (UTMA)</a><a href="/family#controls">Parental controls</a></div>
+        <div><h4>Plan ahead</h4><a href="/learn#allowance">Allowance &amp; chores</a><a href="/learn#college">Saving for college</a></div>
+      </div></div>
+    <div><button aria-expanded="false" aria-controls="m-pay">Pay &amp; transfer</button>
+      <div class="mega" id="m-pay" hidden>
+        <div><h4>Send money</h4><a href="/pay#transfer">Transfers</a><a href="/pay#usa-pay">USA Pay person-to-person</a><a href="/pay#wire">Wire transfers</a></div>
+        <div><h4>Pay bills</h4><a href="/pay#billpay">Bill pay</a><a href="/pay#autopay">Card autopay</a></div>
+        <div><h4>Connect</h4><a href="/pay#external">Link an external account (ACH)</a><a href="/pay#deposit">Mobile check deposit</a></div>
+      </div></div>
+    <div><button aria-expanded="false" aria-controls="m-biz">Business</button>
+      <div class="mega" id="m-biz" hidden>
+        <div><h4>Business banking</h4><a href="/business#checking">Business checking</a><a href="/business#cards">Business credit cards</a><a href="/business#merchant">Merchant services</a></div>
+      </div></div>
+  </nav>
+  <div class="top-acts">
+    <a class="btn" href="/open">Open an account</a>
+    <a class="btn pri" href="/login">Log in</a>
+    <button class="btn menu-btn" aria-controls="nav" aria-expanded="false" id="menu">Menu</button>
+  </div>
+</div></header>
+
+<main id="main">
+<section class="hero" aria-labelledby="hero-h"><div class="wrap">
+  <div>
+    <div class="eyebrow">New savings offer</div>
+    <h1 id="hero-h">Score up to $1,000 with USA Banc Bright Savings.</h1>
+    <p class="lead">Open a Bright Savings account, add new money, and earn a bonus of up to $1,000. Demo offer: no real money.</p>
+    <div class="row"><a class="btn brass" href="/open#savings">Open Bright Savings</a><a class="btn" href="#offer-details">See offer details</a></div>
+  </div>
+  <form class="auth-card hero-login" id="hero-login" method="post" action="/api/session" aria-labelledby="hl-h" autocomplete="on" novalidate>
+    <h2 id="hl-h">Account login</h2>
+    <div class="fld"><input id="hl-user" name="username" type="text" autocomplete="username" required><label for="hl-user">Username</label></div>
+    <label class="chk"><input type="checkbox" id="hl-remember"> Remember my username</label>
+    <div class="fld"><input id="hl-pass" name="password" type="password" autocomplete="current-password" required><label for="hl-pass">Password</label><button type="button" class="show" id="hl-show" aria-pressed="false">Show</button></div>
+    <p class="auth-err" id="hl-err" role="alert"></p>
+    <button class="auth-btn pri" type="submit">Log in with password</button>
+    <button class="auth-btn ghost" type="button" id="hl-passkey"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18" cy="11" r="2"/><path d="M18 13v5l1.6 1.2L18 20.6"/></svg> Use passkey</button>
+    <div class="auth-links">
+      <a href="/forgot-password" id="hl-forgot">Forgot username or password <span aria-hidden="true">›</span></a>
+      <a class="u" href="/enroll">Enroll in online banking</a>
+    </div>
+    <p class="hl-demo">Demo: <b>nizam@helixbots.ai</b> / <b>nizam</b></p>
+  </form>
+</div></section>
+
+<section class="promos" aria-labelledby="promo-h"><div class="wrap">
+  <h2 id="promo-h" class="skip">Featured</h2>
+  <div class="track" id="track">
+    <a class="promo" href="/open#checking"><div class="art" style="background:linear-gradient(135deg,#7cc0ff,#a9d4ff)"><img src="/assets/img/offer-welcome.jpg" alt="A smiling woman relaxes on a sofa at home and looks at her phone" width="800" height="400" loading="lazy" decoding="async"></div><div class="body"><span class="eyebrow">New customers</span><h3>Earn a $300 welcome bonus</h3><p>Open Smart Checking and set up direct deposit within 90 days. Demo offer.</p></div></a>
+    <a class="promo" href="/cards#cashback"><div class="art" style="background:linear-gradient(135deg,#0c2d63,#2f6fd6)"><img src="/assets/img/offer-cashback.jpg" alt="A hand taps a plain, unbranded card on a payment terminal" width="800" height="400" loading="lazy" decoding="async"></div><div class="body"><span class="eyebrow">Credit cards</span><h3>2% cash back on everything</h3><p>No annual fee, and a 0% intro APR on purchases for 15 months. Demo offer.</p></div></a>
+    <a class="promo" href="/family"><div class="art" style="background:linear-gradient(135deg,#1d3c5a,#4f7ea8)"><img src="/assets/img/offer-family.jpg" alt="A mother and her young daughter sit on a bed and look at a phone together" width="800" height="400" loading="lazy" decoding="async"></div><div class="body"><span class="eyebrow">Family banking</span><h3>Teach money with real money</h3><p>Teen checking with spend limits, allowance and chores you set. Demo offer.</p></div></a>
+    <a class="promo" href="/credit"><div class="art" style="background:linear-gradient(135deg,#2a3550,#5b6b8f)"><img src="/assets/img/offer-credit.jpg" alt="A woman works on a laptop at a wooden kitchen table" width="800" height="400" loading="lazy" decoding="async"></div><div class="body"><span class="eyebrow">Credit health</span><h3>Check your credit score free</h3><p>See your score and what moves it. Checking won't affect your score.</p></div></a>
+  </div>
+  <div class="dots" id="dots" role="tablist" aria-label="Featured offers"></div>
+</div></section>
+
+<section aria-labelledby="prod-h"><div class="wrap">
+  <h2 id="prod-h">What can we help you with today?</h2>
+  <div class="tiles">
+    <a class="tile" href="/cards"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span>Credit cards</a>
+    <a class="tile" href="/open#checking"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M4 7h16v10H4z"/><path d="M8 12h8M4 7l2-3h12l2 3"/></svg></span>Checking</a>
+    <a class="tile" href="/open#savings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M5 11a7 6 0 0 1 14 0v3a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/><path d="M9 17v3M15 17v3M12 5V3"/></svg></span>Savings</a>
+    <a class="tile" href="/open#cd"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>CDs</a>
+    <a class="tile" href="/loans#mortgage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>Mortgage</a>
+    <a class="tile" href="/loans#personal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M12 3v18M16 7H10a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8"/></svg></span>Loans</a>
+  </div>
+</div></section>
+
+<section style="background:var(--bg)" aria-labelledby="chk-h"><div class="wrap split">
+  <div class="art" style="background:radial-gradient(circle at 30% 30%,#a9d4ff 0 18%,transparent 19%),radial-gradient(circle at 70% 65%,#2f6fd6 0 26%,transparent 27%),linear-gradient(135deg,#e8f0fc,#eaf3ff)"><img src="/assets/img/checking-cafe.jpg" alt="A woman smiles at her phone at a café table with a coffee and a croissant" width="900" height="900" loading="lazy" decoding="async"></div>
+  <div>
+    <span class="eyebrow">Smart Checking</span>
+    <h2 id="chk-h">Checking with no monthly fee when you set up direct deposit.</h2>
+    <p class="body">Get paid up to two days early, see every transaction the moment it posts, and turn your debit card off from your phone.</p>
+    <a class="btn pri" href="/open#checking">Compare checking accounts</a>
+  </div>
+</div></section>
+
+<section class="goals" aria-labelledby="app-h"><div class="wrap goals-grid">
+  <div>
+    <h2 id="app-h">Set goals, stay on track, <em>achieve more</em> all in one place.</h2>
+    <ul class="checks light">
+      <li>Monitor bills and subscriptions to stay in control of your budget</li>
+      <li>Grow your savings with automated tools that do the work for you</li>
+      <li>Manage your rewards and discover new perks</li>
+      <li>Send and transfer money on your time</li>
+    </ul>
+    <div class="row" style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn brass" href="/enroll">Download the app</a><a class="btn ghost-light" href="/login">Log in to your account</a></div>
+  </div>
+  <div class="phones" aria-hidden="true">
+    <div class="ph2 back"><div class="pscr">
+      <div class="pbar"><span>9:41</span><span class="brandmark"><img src="/assets/logo.svg" alt="" width="16" height="16"> USA <b>Banc</b></span><svg class="pstat" width="34" height="11" viewBox="0 0 34 11" fill="currentColor" aria-hidden="true"><rect y="7" width="3" height="4" rx=".5"/><rect x="4.5" y="5" width="3" height="6" rx=".5"/><rect x="9" y="2.5" width="3" height="8.5" rx=".5"/><rect x="13.5" width="3" height="11" rx=".5"/><rect x="19.5" y="1" width="12" height="9" rx="2" fill="none" stroke="currentColor"/><rect x="21.5" y="3" width="8" height="5" rx="1"/><rect x="32.3" y="3.5" width="1.5" height="4" rx=".7"/></svg></div>
+      <div class="pbody">
+        <div class="peyebrow">View by <b>Month ▾</b></div>
+        <div class="donut" role="img" aria-label="Monthly spending 1,690 dollars"><div class="donut-c"><small>Monthly spending</small><b>$1,690.00</b></div></div>
+        <div class="cat"><span class="dot" style="background:#1a56b8"></span><span class="cn">Auto &amp; Transport<small>$520.44</small></span><span class="pct">20%</span></div>
+        <div class="cat"><span class="dot" style="background:#2f6fd6"></span><span class="cn">Bills &amp; Utilities<small>$478.00</small></span><span class="pct">15%</span></div>
+        <div class="cat"><span class="dot" style="background:#7cc0ff"></span><span class="cn">Shopping<small>$470.00</small></span><span class="pct">12%</span></div>
+        <div class="cat"><span class="dot" style="background:#0c2d63"></span><span class="cn">Food &amp; Dining<small>$126.00</small></span><span class="pct">10%</span></div>
+        <div class="cat"><span class="dot" style="background:#5b6b8f"></span><span class="cn">Travel<small>$90.99</small></span><span class="pct">6%</span></div>
+      </div>
+    </div></div>
+    <div class="ph2 front"><div class="pscr">
+      <div class="pbar"><span>9:41</span><span class="brandmark"><img src="/assets/logo.svg" alt="" width="16" height="16"> USA <b>Banc</b></span><svg class="pstat" width="34" height="11" viewBox="0 0 34 11" fill="currentColor" aria-hidden="true"><rect y="7" width="3" height="4" rx=".5"/><rect x="4.5" y="5" width="3" height="6" rx=".5"/><rect x="9" y="2.5" width="3" height="8.5" rx=".5"/><rect x="13.5" width="3" height="11" rx=".5"/><rect x="19.5" y="1" width="12" height="9" rx="2" fill="none" stroke="currentColor"/><rect x="21.5" y="3" width="8" height="5" rx="1"/><rect x="32.3" y="3.5" width="1.5" height="4" rx=".7"/></svg></div>
+      <div class="pbody">
+        <h3 class="pttl">Plan &amp; track</h3>
+        <div class="pcard"><div class="pcard-h"><b>Cash flow</b><span class="chip up">↑ $343.00</span></div><small>March</small>
+          <div class="big">$1,000.00</div><div class="goodnote">You've earned more than you've spent.</div>
+          <div class="pcols"><div><small>Income</small><b>$2,500.00</b></div><div><small>Spending</small><b>$1,500.00</b></div></div></div>
+        <div class="pcard"><div class="pcard-h"><b>Spending</b><span class="chip up">↑ $60.90</span></div><small>March</small>
+          <div class="big">$882.10</div>
+          <svg class="spark" viewBox="0 0 200 54" preserveAspectRatio="none" aria-hidden="true"><path d="M0 44 L30 40 L60 42 L90 30 L120 34 L150 20 L200 14" fill="none" stroke="#2f6fd6" stroke-width="3"/><path d="M0 44 L30 40 L60 42 L90 30 L120 34 L150 20 L200 14 L200 54 L0 54 Z" fill="rgba(47,111,214,.12)"/></svg></div>
+      </div>
+    </div></div>
+  </div>
+</div></section>
+
+<section aria-labelledby="ct-h"><div class="wrap">
+  <h2 id="ct-h" class="skip">Get in touch</h2>
+  <div class="contact">
+    <a class="ct" href="/locations"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span><h3>Find a branch or ATM</h3><p>Search by city or ZIP code.</p></span></a>
+    <a class="ct" href="/support#call"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span><h3>Call us</h3><p>800-555-0142 (demo number), 24/7.</p></span></a>
+    <a class="ct" href="/support#appointment"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><span><h3>Make an appointment</h3><p>Meet a banker in person or by video.</p></span></a>
+  </div>
+</div></section>
+
+<section class="lend" aria-labelledby="lend-h"><div class="wrap">
+  <h2 id="lend-h">Borrow for what's next.</h2>
+  <div class="lgrid">
+    <a class="lt big" href="/loans#mortgage" style="background:linear-gradient(160deg,#2f6fd6,#0c2d63)"><img src="/assets/img/lend-mortgage.jpg" alt="A gray shingled house with a white wraparound porch and a green lawn" width="1200" height="900" loading="lazy" decoding="async"><div><h3>Mortgage</h3><p>Buy a home or refinance. See today's rates.</p></div></a>
+    <a class="lt" href="/loans#auto" style="background:linear-gradient(160deg,#4f7ea8,#1d3c5a)"><img src="/assets/img/lend-auto.jpg" alt="A red car drives along an open country road under a cloudy sky" width="900" height="600" loading="lazy" decoding="async"><div><h3>Auto loans</h3><p>New, used or refinance.</p></div></a>
+    <a class="lt" href="/loans#personal" style="background:linear-gradient(160deg,#7cc0ff,#1a56b8)"><img src="/assets/img/lend-personal.jpg" alt="An older couple on a sofa go over papers and plans together" width="900" height="600" loading="lazy" decoding="async"><div><h3>Personal loans</h3><p>Fixed rate, funds as soon as tomorrow.</p></div></a>
+    <a class="lt" href="/loans#heloc" style="background:linear-gradient(160deg,#5b6b8f,#2a3550)"><img src="/assets/img/lend-home-equity.jpg" alt="A bright renovated kitchen with a white marble island and pendant lights" width="900" height="600" loading="lazy" decoding="async"><div><h3>Home equity</h3><p>A line of credit backed by your home.</p></div></a>
+    <a class="lt" href="/credit" style="background:linear-gradient(160deg,#55617a,#0f1b2d)"><img src="/assets/img/lend-rate.jpg" alt="An open laptop next to a cup of coffee on a wooden table" width="900" height="600" loading="lazy" decoding="async"><div><h3>Check your rate</h3><p>Prequalify without hurting your score.</p></div></a>
+  </div>
+</div></section>
+
+<section aria-labelledby="learn-h"><div class="wrap">
+  <div class="sec-head"><h2 id="learn-h">Happening now</h2><a href="/learn">See all articles</a></div>
+  <div class="arts">
+    <a class="art-card" href="/learn#allowance"><div class="art" style="background:linear-gradient(135deg,#eaf3ff,#a9d4ff)"><img src="/assets/img/article-allowance.jpg" alt="A child's cupped hands hold a pile of coins" width="800" height="400" loading="lazy" decoding="async"></div><div class="body"><span class="eyebrow">Family finance</span><h3>How to set an allowance your kids will actually learn from</h3><span class="more">Read more</span></div></a>
+    <a class="art-card" href="/learn#credit"><div class="art" style="background:linear-gradient(135deg,#e8f0fc,#2f6fd6)"><img src="/assets/img/article-credit.jpg" alt="A laptop, a mug of coffee and a notebook on a wooden desk" width="800" height="400" loading="lazy" decoding="async"></div><div class="body"><span class="eyebrow">Credit</span><h3>What really moves your credit score (and what doesn't)</h3><span class="more">Read more</span></div></a>
+    <a class="art-card" href="/learn#fraud"><div class="art" style="background:linear-gradient(135deg,#dfe6ee,#4f7ea8)"><img src="/assets/img/article-scams.jpg" alt="Two hands hold a phone and type a message" width="800" height="400" loading="lazy" decoding="async"></div><div class="body"><span class="eyebrow">Security</span><h3>5 signs a payment request is a scam</h3><span class="more">Read more</span></div></a>
+  </div>
+</div></section>
+
+<div class="disc"><div class="wrap">
+  <p>USA Banc is a fictional bank created for software testing and demonstration. It does not offer real deposit accounts, credit cards or loans, is not FDIC insured, and is not affiliated with U.S. Bank, U.S. Bancorp or any other financial institution. All rates, offers and balances shown are fictional.</p>
+  <p id="offer-details">Bright Savings bonus (demo): earn $250, $500 or $1,000 when you add $10,000, $25,000 or $50,000 in new money within 30 days of opening and keep it there for 90 days. Fictional offer for testing only.</p>
+  <p>Zelle and the Zelle-related marks are property of Early Warning Services, LLC; "Zelle-style" payments in this demo are simulated and are not connected to the Zelle network. Credit decisions in this demo are simulated and use no real credit bureau data.</p>
+  <div class="ehl"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M9 14h6M9 17h6"/></svg>Demo only: no real lending</div>
+</div></div>
+</main>
+
+<footer><div class="wrap">
+  <div class="fcols">
+    <div><h4>Banking</h4><a href="/open#checking">Checking</a><a href="/open#savings">Savings</a><a href="/cards">Credit cards</a><a href="/loans">Loans</a></div>
+    <div><h4>Family</h4><a href="/open#joint">Joint accounts</a><a href="/open#teen">Teen checking</a><a href="/open#custodial">Custodial accounts</a></div>
+    <div><h4>Support</h4><a href="/support">Help center</a><a href="/security">Security center</a><a href="/security#report">Report fraud</a><a href="/locations">Locations</a></div>
+    <div><h4>Company</h4><a href="/about">About USA Banc</a><a href="/about#accessibility">Accessibility</a><a href="/about#privacy">Privacy</a><a href="/about#sitemap">Site map</a></div>
+  </div>
+  <div class="fbot">
+    <span>© 2026 USA Banc (fictional demo). Not a real bank.</span>
+    <div class="social" aria-label="Social (demo)">
+      <a href="/about#social" aria-label="Social link (demo)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg></a>
+      <a href="/about#social" aria-label="Social link (demo)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="3"/></svg></a>
+    </div>
+  </div>
+</div></footer>
+
+<script src="/assets/site.js"></script>
+<script>
+// promo carousel dots
+const track = document.getElementById('track'), dots = document.getElementById('dots'), cards = [...track.children];
+cards.forEach((c, i) => { const d = document.createElement('button'); d.setAttribute('aria-label', `Offer ${i + 1} of ${cards.length}`); d.onclick = () => track.scrollTo({ left: c.offsetLeft - track.offsetLeft, behavior: 'smooth' }); dots.appendChild(d); });
+const mark = () => { const i = Math.round(track.scrollLeft / (cards[0].offsetWidth + 20)); [...dots.children].forEach((d, k) => d.setAttribute('aria-current', String(k === Math.min(i, cards.length - 1)))); };
+track.addEventListener('scroll', mark, { passive: true }); mark();
+</script>
+<script type="module">
+// Home-page sign-in: same API as /login. If the user needs a one-time code, /login takes over for that step.
+import { api } from '/assets/client.js';
+const $ = s => document.querySelector(s), form = $('#hero-login');
+form.querySelectorAll('.fld input').forEach(i => { const sync = () => i.classList.toggle('has', !!i.value); i.addEventListener('input', sync); sync(); });
+$('#hl-show').addEventListener('click', () => { const p = $('#hl-pass'), on = p.type === 'password'; p.type = on ? 'text' : 'password'; $('#hl-show').textContent = on ? 'Hide' : 'Show'; $('#hl-show').setAttribute('aria-pressed', String(on)); });
+$('#hl-passkey').addEventListener('click', () => { $('#hl-err').textContent = 'Passkeys are not set up in this demo yet. Use your password.'; });
+try { const u = localStorage.getItem('usab_user'); if (u) { $('#hl-user').value = u; $('#hl-user').classList.add('has'); $('#hl-remember').checked = true; } } catch {}
+form.addEventListener('submit', async e => {
+  e.preventDefault(); $('#hl-err').textContent = '';
+  const username = $('#hl-user').value.trim(), password = $('#hl-pass').value;
+  if (!username || !password) { $('#hl-err').textContent = 'Enter your username and password.'; return; }
+  form.querySelectorAll('button').forEach(b => (b.disabled = true));
+  try {
+    const r = await api('POST', '/api/session', { username, password }, { auth: false, retry: false });
+    try { if ($('#hl-remember').checked) localStorage.setItem('usab_user', username); else localStorage.removeItem('usab_user'); } catch {}
+    if (r.next === 'done') { location.href = '/app'; return; }
+    try { sessionStorage.setItem('usab_code', JSON.stringify({ phoneLast2: r.phoneLast2, demoCode: r.demoCode })); } catch {}
+    location.href = '/login#code';
+  } catch (err) { $('#hl-err').textContent = err.message; $('#hl-pass').value = ''; $('#hl-pass').classList.remove('has'); }
+  finally { form.querySelectorAll('button').forEach(b => (b.disabled = false)); }
+});
+</script>
+</body>
+</html>

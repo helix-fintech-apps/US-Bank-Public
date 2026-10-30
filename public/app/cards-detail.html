@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Card details | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+<link rel="stylesheet" href="/assets/cards.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <a class="c-back" href="/app/cards">‹ All cards</a>
+  <div class="sv-h"><div><h1 id="title">Card</h1><p id="sub">Controls, payments and activity for this card.</p></div></div>
+  <p class="err" id="err" role="alert"></p>
+  <p class="msg ok" id="flash" role="status" aria-live="polite"></p>
+  <div id="view"><p class="sv-muted">Loading…</p></div>
+</div></main>
+<dialog class="c-dlg" id="dlg"></dialog>
+<script type="module">
+import { api, shell, money, esc, newKey } from '/assets/client.js';
+import { day } from '/assets/servicing.js';
+import { cardArt, pill, STATUS, CHANNEL } from '/assets/cards.js';
+shell('/app/cards');
+const $ = s => document.querySelector(s);
+const qp = new URLSearchParams(location.search);
+let accountId = qp.get('account'), cardId = qp.get('card'), data = null, card = null;
+const neg = s => String(s).startsWith('-');
+const flash = (t, bad = false) => { $('#flash').textContent = t; $('#flash').className = 'msg ' + (bad ? 'bad' : 'ok'); };
+const opts = (list, sel) => list.map(a => `<option value="${esc(a.id)}"${a.id === sel ? ' selected' : ''}>${esc(a.name)} ··${esc(a.last4)} (${money(a.balance)})</option>`).join('');
+const box = (id, title, body, { extra = '', pad = true, cls = '' } = {}) => `<section class="sv-card ${cls}" aria-labelledby="${id}-h">
+  <header><h2 id="${id}-h">${title}</h2>${extra}</header>${pad ? `<div class="sv-pad">${body}</div>` : body}</section>`;
+const fld = (label, input, wide = false) => `<label class="sv-fld${wide ? ' wide' : ''}"><span>${label}</span>${input}</label>`;
+const sim = '<span class="c-sim">Simulated</span>';
+const lines = (ts, dispute = false) => ts.length ? `<ul class="sv-list">${ts.map(t => `<li><div><div class="d">${esc(t.description)}</div>
+  <div class="m"><span>${day(t.postedOn)}${t.category ? ' · ' + esc(t.category) : ''}</span>${dispute && t.disputeId ? pill('open', 'Disputed') : ''}${dispute && t.disputable ? `<button type="button" class="linkbtn" data-dispute="${esc(t.id)}">Dispute</button>` : ''}</div></div>
+  <div class="a ${neg(t.amount) ? '' : 'pos'}">${neg(t.amount) ? '' : '+'}${money(t.amount)}</div></li>`).join('')}</ul>` : '<p class="sv-empty">Nothing yet.</p>';
+
+// ---------- shared panels ----------
+function controlsPanel(c) {
+  const can = c.canManage && c.card.status !== 'closed';
+  const rows = c.controls.map(x => `<li><div class="sv-switch"><div class="t"><b id="ctl-${esc(x.channel)}">${esc(x.label)}</b><span class="sv-muted">${esc(x.hint)}</span></div>
+      <button role="switch" data-channel="${esc(x.channel)}" aria-checked="${x.enabled}" aria-labelledby="ctl-${esc(x.channel)}"${can ? '' : ' disabled'}></button></div>
+    ${x.channel === 'international' ? '' : `<form class="ctl-lim" data-channel="${esc(x.channel)}"><span class="sv-muted">Daily limit</span>
+      <input class="sv-in" name="limit" inputmode="decimal" value="${esc(x.dailyLimit ?? '')}" placeholder="No limit" aria-label="Daily limit for ${esc(x.label)} in dollars"${can ? '' : ' disabled'}>
+      ${can ? '<button class="btn sv-btn sm ghost">Save</button>' : ''}<span class="sv-muted">${money(x.usedToday)} used today</span></form>`}</li>`).join('');
+  return box('ctl', 'Card controls', `<ul class="sv-rules c-ctl">${rows}</ul>
+    <p class="sv-muted sv-pad c-tight">${can ? `Turning a kind of use back on, or raising a limit, asks for a one-time code. Limits go up to ${money(c.maxDailyLimit)} a day.`
+      : c.viewOnly ? 'View-only mode: switch to managed mode on the Family page to change this card.' : 'These are set by a parent or guardian.'}</p>`, { pad: false });
+}
+const travelPanel = c => box('tr', 'Travel notices', `${c.travelNotices.length ? `<ul class="sv-dev c-flush">${c.travelNotices.map(n => `<li><span><b>${esc(n.destination)}</b><br><span class="sv-muted">${day(n.startOn)} to ${day(n.endOn)}</span></span>
+    ${c.canManage ? `<button type="button" class="btn sv-btn sm ghost" data-cancel-trip="${esc(n.id)}">Cancel</button>` : ''}</li>`).join('')}</ul>` : '<p class="sv-muted">No trips on file.</p>'}
+  ${c.canManage ? `<form id="travel" class="sv-form c-mt">${fld('Where are you going?', '<input class="sv-in" name="destination" maxlength="60" placeholder="Lisbon, Portugal" required>', true)}
+    ${fld('Leaving', '<input class="sv-in" type="date" name="startOn" required>')}${fld('Back', '<input class="sv-in" type="date" name="endOn" required>')}
+    <div class="wide"><button class="btn sv-btn ghost">Add travel notice</button></div></form>
+    <p class="sv-muted c-mt">During a trip, purchases abroad are allowed even when international use is off.</p>` : ''}`);
+const buyPanel = () => box('buy', `Simulate purchase ${sim}`, `<form id="buy" class="sv-form" data-key="${newKey()}">
+    ${fld('Merchant', '<input class="sv-in" name="merchant" value="Corner Bakery" maxlength="60" required>')}
+    ${fld('Amount ($)', '<input class="sv-in" name="amount" inputmode="decimal" value="12.50" required>')}
+    ${fld('How it is used', `<select class="sv-in" name="channel">${Object.entries(CHANNEL).map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>`)}
+    ${fld('Category', `<select class="sv-in" name="category">${(card?.categories ?? ['Shopping']).map(x => `<option${x === 'Shopping' ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>`)}
+    <label class="chk-l wide"><input type="checkbox" name="international"> Merchant is outside the US</label>
+    <div class="wide"><button class="btn sv-btn pri">Run simulated purchase</button></div></form>
+  <p class="sv-note c-mt"><b>Demo only.</b> No merchant or card network is involved. A locked card, a channel that is off, a daily limit or the credit limit declines it.</p>
+  ${card?.authorizations.length ? `<h3 class="c-h3">Recent authorizations</h3><ul class="sv-list c-flush">${card.authorizations.slice(0, 5).map(a => `<li><div><div class="d">${esc(a.merchant)}</div>
+    <div class="m"><span>${esc(CHANNEL[a.channel] ?? a.channel)}${a.international ? ' · abroad' : ''}</span>${a.result === 'declined' ? pill('declined', 'Declined') : pill('active', 'Approved')}</div>
+    ${a.result === 'declined' ? `<div class="m">${esc(a.reasonText ?? a.reason)}</div>` : ''}</div><div class="a">${money(a.amount)}</div></li>`).join('')}</ul>` : ''}`);
+const actions = (k, canUnlock, reveal = false) => `<div class="cd-acts">
+  ${k.status === 'locked' ? (canUnlock ? '<button class="btn sv-btn pri" id="unlock">Unlock card</button>' : '<span class="sv-muted">Locked. Ask a parent or guardian to unlock it.</span>')
+    : k.status === 'active' ? '<button class="btn sv-btn ghost" id="lock">Lock card</button>' : ''}
+  ${reveal && k.status !== 'closed' ? '<button class="btn sv-btn ghost" id="reveal">Show demo virtual number</button>' : ''}
+  ${k.status !== 'closed' && card?.canManage ? '<button class="btn sv-btn danger" id="replace">Report lost or stolen</button>' : ''}</div>
+  <p class="sv-muted c-mt">${k.status === 'locked' ? 'Locked: new purchases are declined until you unlock it.' : 'Locking is instant and you can undo it any time.'}</p>`;
+const stat = (k, v, s = '', id = '') => `<div class="stat"><span class="k">${k}</span><span class="v"${id ? ` id="${id}"` : ''}>${v}</span>${s ? `<span class="s">${s}</span>` : ''}</div>`;
+
+// ---------- credit card ----------
+function renderCredit(d) {
+  const a = d.account, s = d.statement, k = d.card;
+  $('#title').textContent = `${a.name} ··${a.last4}`;
+  $('#sub').textContent = `${d.product.rewardsText}. ${a.apr}% purchase APR.`;
+  document.title = `${a.name} ··${a.last4} | USA Banc`;
+  const payOpts = s ? [['minimum', 'Minimum due', s.minimumLeft], ['statement', 'Statement balance', s.statementLeft], ['current', 'Current balance', a.owed]] : [['current', 'Current balance', a.owed]];
+  const first = payOpts.find(o => o[2] !== '0.00')?.[0] ?? 'custom';
+  $('#view').innerHTML = `
+  <section class="sv-card cd-hero" aria-label="Card summary">
+    <div class="sv-pad">${k ? cardArt({ kind: d.product.kind, name: d.product.name, last4: k.last4, holder: k.holder, exp: k.exp, status: k.status }) : ''}
+      ${k ? actions(k, d.canManage, d.canManage) : ''}<div id="secret"></div></div>
+    <div class="cd-sum">
+      ${stat('Current balance', money(a.owed), '', 'owed')}
+      ${stat('Available credit', money(a.available), `of ${money(a.creditLimit)} limit`, 'avail')}
+      ${stat('Statement balance', s ? money(s.balance) : '—', s ? `Closed ${day(s.periodEnd)}` : 'No statement yet')}
+      ${stat('Minimum due', s ? money(s.minimumLeft) : '—', s ? `Due ${day(s.dueDate)}` : '', 'mindue')}
+      ${stat('Purchase APR', `${esc(a.apr)}%`, d.product.annualFee !== '0.00' ? `${money(d.product.annualFee)} annual fee` : 'No annual fee')}
+      ${stat('Rewards', money(d.rewards.balance), esc(d.rewards.rate), 'rew')}
+      ${a.securityDeposit !== '0.00' ? stat('Security deposit', money(a.securityDeposit)) : ''}
+    </div>
+  </section>
+  <div class="sv-grid">
+    <div>
+      ${box('act', 'Activity', lines(d.transactions, true), { pad: false })}
+      ${box('st', 'Statements', `${d.statements.length ? `${fld('Statement period', `<select class="sv-in" id="st-pick">${d.statements.map(x => `<option value="${esc(x.id)}">${day(x.periodStart)} to ${day(x.periodEnd)}</option>`).join('')}</select>`)}<div id="st-body" class="c-mt"></div>`
+          : '<p class="sv-muted">Your first statement closes about a month after the card opens.</p>'}
+        <p class="sv-muted c-mt">${esc(d.minimumRule)} Due 25 days after the statement closes.</p>`,
+        { extra: d.canManage ? `<button type="button" class="btn sv-btn sm ghost" id="close-st">Close a statement now ${sim}</button>` : '' })}
+      ${d.disputes.length ? box('dp', 'Disputes', `<ul class="sv-list">${d.disputes.map(x => `<li><div><div class="d">${esc(x.description)}</div>
+        <div class="m"><span>${esc(x.reasonText)}</span>${pill(x.status, { open: 'Open, provisional credit given', resolved_won: 'Resolved in your favor', resolved_lost: 'Resolved for the merchant, re-billed' }[x.status])}</div>
+        ${x.status === 'open' && d.canManage ? `<div class="m">${sim} <button type="button" class="linkbtn" data-resolve="${esc(x.id)}">Demo: simulate the merchant's answer</button></div>
+          <div class="m sv-muted">Our dispute rules decide the outcome, not you. Rewards on this purchase are held while it's open.</div>` : ''}
+        ${x.decision ? `<div class="m sv-muted">${esc(x.decision)}</div>` : ''}</div>
+        <div class="a">${money(x.amount)}</div></li>`).join('')}</ul>`, { pad: false }) : ''}
+    </div>
+    <div>
+      ${d.canManage ? box('pay-b', 'Make a payment', `<form id="pay" data-key="${newKey()}" class="c-stack">${fld('From', `<select class="sv-in" name="from">${opts(d.fundingAccounts)}</select>`)}
+        <fieldset class="opts"><legend class="sv-muted">Amount</legend>
+          ${payOpts.map(([v, t, amt]) => `<label><input type="radio" name="type" value="${v}"${v === first ? ' checked' : ''}${amt === '0.00' ? ' disabled' : ''}> ${t}<span class="amt">${money(amt)}</span></label>`).join('')}
+          <label><input type="radio" name="type" value="custom"${first === 'custom' ? ' checked' : ''}> Other amount</label></fieldset>
+        <label class="sv-fld" id="custom-amt" ${first === 'custom' ? '' : 'hidden'}><span>Amount ($)</span><input class="sv-in" name="amount" inputmode="decimal" placeholder="0.00"></label>
+        <button class="btn sv-btn pri">Pay</button><p class="sv-muted">You can pay up to your current balance. Simulated: the payment moves through the ledger right away; no real ACH transfer is made.</p></form>`)
+      + box('ap', `Autopay ${d.autopay ? pill('active', 'On') : pill('closed', 'Off')}`, `${d.autopay ? `<p>Pays the <b>${{ minimum: 'minimum due', statement: 'statement balance', fixed: money(d.autopay.fixedAmount) }[d.autopay.type]}</b> on each due date${d.autopay.lastResult ? `. Last run: ${esc(d.autopay.lastResult.replace(/_/g, ' '))}` : ''}.</p>` : '<p class="sv-muted">Never miss a due date. If the account is short on the due date, autopay is skipped, not overdrawn.</p>'}
+        <form id="autopay" class="c-stack c-mt">${fld('From', `<select class="sv-in" name="from">${opts(d.fundingAccounts, d.autopay?.fromAccountId)}</select>`)}
+          ${fld('Amount', `<select class="sv-in" name="type">${[['minimum', 'Minimum due'], ['statement', 'Statement balance'], ['fixed', 'A fixed amount']].map(([v, t]) => `<option value="${v}"${d.autopay?.type === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`)}
+          <label class="sv-fld" id="ap-fixed" ${d.autopay?.type === 'fixed' ? '' : 'hidden'}><span>Fixed amount ($)</span><input class="sv-in" name="amount" inputmode="decimal" value="${esc(d.autopay?.fixedAmount ?? '')}"></label>
+          <div class="sv-row"><button class="btn sv-btn pri">${d.autopay ? 'Update autopay' : 'Turn on autopay'}</button>${d.autopay ? '<button type="button" class="btn sv-btn ghost" id="ap-off">Turn off</button>' : ''}</div></form>`) : ''}
+      ${box('rw', 'Rewards', `<p><b>${money(d.rewards.balance)}</b> to redeem · ${money(d.rewards.earned)} earned all time</p><p class="sv-muted">${esc(d.rewards.rate)}</p>
+        ${d.canManage && d.rewards.balance !== '0.00' ? `<form id="redeem" data-key="${newKey()}" class="c-stack c-mt">${fld('Deposit to', `<select class="sv-in" name="to">${opts(d.fundingAccounts)}</select>`)}<button class="btn sv-btn ghost">Redeem ${money(d.rewards.balance)}</button></form>` : ''}`)}
+      ${card ? controlsPanel(card) + travelPanel(card) : ''}
+      ${k && k.status !== 'closed' ? buyPanel() : ''}
+    </div>
+  </div>`;
+  if (d.statements.length) { showStatement(d.statements[0].id); $('#st-pick').onchange = e => showStatement(e.target.value); }
+}
+
+async function showStatement(id) {
+  try {
+    const r = await api('GET', `/api/cards/credit/${encodeURIComponent(accountId)}/statements/${encodeURIComponent(id)}`), s = r.statement;
+    $('#st-body').innerHTML = `<div class="cd-sum flat">${stat('Statement balance', money(s.balance))}${stat('Minimum due', money(s.minimumDue), `Due ${day(s.dueDate)}`)}${stat('Interest charged', money(s.interest))}</div>
+      <h3 class="c-h3">Transactions in this period</h3>${lines(r.transactions)}`;
+  } catch (e) { $('#err').textContent = e.message; }
+}
+
+// ---------- debit card ----------
+function renderDebit(c) {
+  const k = c.card, a = c.account;
+  $('#title').textContent = `Debit card ··${k.last4}`;
+  $('#sub').textContent = `Spends from ${a.name} ··${a.last4}.`;
+  document.title = `Debit card ··${k.last4} | USA Banc`;
+  $('#view').innerHTML = `<section class="sv-card cd-hero" aria-label="Card summary">
+    <div class="sv-pad">${cardArt({ kind: 'debit', name: 'Debit', last4: k.last4, holder: k.holder, exp: k.exp, status: k.status })}${actions(k, c.canUnlock)}</div>
+    <div class="cd-sum">
+      ${stat('Linked account', esc(a.name), `··${esc(a.last4)}`)}
+      ${stat('Available balance', money(a.balance))}
+      ${stat('Card status', esc(STATUS[k.status]), k.status === 'locked' ? 'New purchases are declined' : 'Ready to use')}
+      ${stat('Card holder', esc(k.holder), `Valid thru ${esc(k.exp)}`)}
+    </div></section>
+  <div class="sv-grid">
+    <div>${box('act', 'Account activity', lines(c.transactions), { pad: false })}${k.status !== 'closed' && c.canPurchase ? buyPanel() : ''}</div>
+    <div>${controlsPanel(c)}${travelPanel(c)}</div>
+  </div>`;
+}
+
+async function load() {
+  try {
+    if (accountId) {
+      data = await api('GET', `/api/cards/credit/${encodeURIComponent(accountId)}`);
+      card = data.card ? await api('GET', `/api/cards/card/${encodeURIComponent(data.card.id)}`) : null;
+      cardId = data.card?.id;
+      renderCredit(data);
+      if (data.autopayRun?.result === 'paid') flash(`Autopay paid ${money(data.autopayRun.amount)} on the due date.`);
+    } else if (cardId) { card = await api('GET', `/api/cards/card/${encodeURIComponent(cardId)}`); renderDebit(card); }
+    else throw new Error('Choose a card from your cards list.');
+  } catch (e) { $('#err').textContent = e.message; $('#view').innerHTML = '<p class="sv-muted"><a href="/app/cards">Back to your cards</a></p>'; }
+}
+
+// one action at a time; errors go to the flash line
+async function act(fn, btn) {
+  if (btn) btn.disabled = true;
+  $('#err').textContent = '';
+  try { const t = await fn(); await load(); if (t) flash(t); }
+  catch (e) { if (e.code !== 'cancelled') flash(e.message, true); }
+  finally { if (btn?.isConnected) btn.disabled = false; }
+}
+const form = f => Object.fromEntries(new FormData(f));
+function dialog(html, onSubmit) {
+  const d = $('#dlg'); d.innerHTML = `<form method="dialog">${html}<p class="msg bad" id="dlg-err"></p><div class="btnrow"><button type="button" class="btn sv-btn ghost" id="dlg-x">Cancel</button><button class="btn sv-btn pri" id="dlg-go">Continue</button></div></form>`;
+  d.showModal();
+  d.querySelector('#dlg-x').onclick = () => d.close();
+  d.querySelector('form').onsubmit = async e => {
+    e.preventDefault();
+    try { await onSubmit(form(e.target)); d.close(); } catch (err) { if (err.code !== 'cancelled') d.querySelector('#dlg-err').textContent = err.message; }
+  };
+}
+
+$('#view').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.getAttribute('role') === 'switch') {
+    const next = t.getAttribute('aria-checked') !== 'true', label = card.controls.find(x => x.channel === t.dataset.channel)?.label;
+    return act(async () => { await api('POST', `/api/cards/card/${cardId}/controls`, { channel: t.dataset.channel, enabled: next }); return `${label}: ${next ? 'on' : 'off'}.`; }, t);
+  }
+  if (t.id === 'lock' || t.id === 'unlock') act(async () => { await api('POST', `/api/cards/card/${cardId}/lock`, { locked: t.id === 'lock' }); return t.id === 'lock' ? 'Card locked. New purchases will be declined.' : 'Card unlocked.'; }, t);
+  else if (t.id === 'reveal') (async () => {                       // no reload: the number lives only on screen, then goes away
+    t.disabled = true;
+    try {
+      const r = await api('POST', `/api/cards/credit/${accountId}/virtual-number`, {});
+      $('#secret').innerHTML = `<div class="secret"><span class="c-demo">DEMO</span><div id="vnum">${esc(r.number)}</div><div class="sv-muted">Exp ${esc(r.exp)} · CVV ${esc(r.cvv)}</div></div><p class="sv-muted c-mt">${esc(r.note)} Hidden again after 60 seconds.</p>`;
+      setTimeout(() => { if ($('#secret')) $('#secret').innerHTML = ''; }, 60_000);
+    } catch (err) { if (err.code !== 'cancelled') flash(err.message, true); }
+    finally { t.disabled = false; }
+  })();
+  else if (t.id === 'replace') dialog(`<h2>Report lost or stolen</h2><p class="sv-muted">We close this card right away and issue a new number. You'll confirm with a one-time code.</p>
+      <fieldset class="opts">${[['lost', 'Lost'], ['stolen', 'Stolen'], ['damaged', 'Damaged']].map(([v, l], i) => `<label><input type="radio" name="reason" value="${v}"${i ? '' : ' checked'}> ${l}</label>`).join('')}</fieldset>`,
+    async f => {
+      const r = await api('POST', `/api/cards/card/${cardId}/replace`, { reason: f.reason });
+      if (!accountId) { cardId = r.card.id; history.replaceState(null, '', '?card=' + r.card.id); }
+      await load(); flash(`Card ··${r.replaced.last4} is closed. Your new card ends in ${r.card.last4}. ${r.note}`);
+    });
+  else if (t.id === 'ap-off') act(async () => { await api('DELETE', `/api/cards/credit/${accountId}/autopay`, {}); return 'Autopay is off.'; }, t);
+  else if (t.id === 'close-st') act(async () => { const r = await api('POST', `/api/cards/credit/${accountId}/statements`, {}); return `Statement closed: ${money(r.statement.balance)}, minimum ${money(r.statement.minimumDue)} due ${day(r.statement.dueDate)}.`; }, t);
+  else if (t.dataset.cancelTrip) act(async () => { await api('DELETE', `/api/cards/card/${cardId}/travel/${t.dataset.cancelTrip}`, {}); return 'Travel notice canceled.'; }, t);
+  else if (t.dataset.resolve) act(async () => { const r = await api('POST', `/api/cards/disputes/${t.dataset.resolve}/simulate-resolution`, {});
+    return (r.dispute.status === 'resolved_won' ? 'Dispute resolved in your favor. The credit stays.' : 'Dispute resolved for the merchant. The charge was billed again and its rewards are back.')
+      + ` ${r.rule.text} (Simulated.)`; }, t);
+  else if (t.dataset.dispute) {
+    const tr = data.transactions.find(x => x.id === t.dataset.dispute), key = newKey();
+    dialog(`<h2>Dispute a charge</h2><p class="sv-muted">${esc(tr.description)} · ${money(tr.amount.replace('-', ''))} on ${day(tr.postedOn)}. We credit it back while we look into it.</p>
+      ${fld('What happened?', `<select class="sv-in" name="reason">${[['unrecognized', "I don't recognize this charge"], ['not_received', "I didn't receive what I paid for"], ['not_as_described', "It wasn't as described"], ['duplicate', 'I was charged twice'], ['wrong_amount', 'I was charged the wrong amount'], ['canceled', 'I canceled and was still charged']].map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>`)}
+      ${fld('Details (optional)', '<textarea class="sv-in" name="details" rows="3" maxlength="500"></textarea>')}`,
+    async f => { await api('POST', `/api/cards/credit/${accountId}/disputes`, { idempotencyKey: key, lineId: tr.id, reason: f.reason, details: f.details }); await load(); flash(`Dispute opened. A provisional credit of ${money(tr.amount.replace('-', ''))} was added.`); });
+  }
+});
+$('#view').addEventListener('change', e => {
+  if (e.target.name === 'type' && e.target.closest('#pay')) $('#custom-amt').hidden = e.target.value !== 'custom';
+  if (e.target.name === 'type' && e.target.closest('#autopay')) $('#ap-fixed').hidden = e.target.value !== 'fixed';
+});
+$('#view').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, v = form(f), btn = f.querySelector('button:not([type=button])');
+  if (f.id === 'pay') act(async () => { const r = await api('POST', `/api/cards/credit/${accountId}/payments`, { idempotencyKey: f.dataset.key, fromAccountId: v.from, type: v.type, amount: v.amount }); return `Payment of ${money(r.payment.amount)} sent. Thank you.`; }, btn);
+  else if (f.id === 'autopay') act(async () => { await api('POST', `/api/cards/credit/${accountId}/autopay`, { fromAccountId: v.from, type: v.type, amount: v.amount }); return 'Autopay is on.'; }, btn);
+  else if (f.id === 'redeem') act(async () => { const r = await api('POST', `/api/cards/credit/${accountId}/rewards/redeem`, { idempotencyKey: f.dataset.key, toAccountId: v.to }); return `${money(r.redeemed)} in rewards deposited.`; }, btn);
+  else if (f.id === 'travel') act(async () => { await api('POST', `/api/cards/card/${cardId}/travel`, v); return `Travel notice added for ${v.destination}.`; }, btn);
+  else if (f.classList.contains('ctl-lim')) act(async () => {
+    const lim = v.limit.trim();
+    await api('POST', `/api/cards/card/${cardId}/controls`, { channel: f.dataset.channel, dailyLimit: lim || null });
+    return `${card.controls.find(x => x.channel === f.dataset.channel).label}: ${lim ? `daily limit ${money(lim.replace(/[$,]/g, ''))}` : 'no daily limit'}.`;
+  }, btn);
+  else if (f.id === 'buy') act(async () => {
+    const body = { idempotencyKey: f.dataset.key, merchant: v.merchant, amount: v.amount, category: v.category, channel: v.channel, international: !!v.international };
+    try { const r = await api('POST', `/api/cards/card/${cardId}/purchases`, body); return `Approved (simulated): ${v.merchant}, ${money(r.authorization.amount)}${r.rewardsEarned && r.rewardsEarned !== '0.00' ? `. You earned ${money(r.rewardsEarned)} in rewards.` : '.'}`; }
+    catch (err) { if (err.data?.authorization) { await load(); flash(`Declined (simulated): ${err.message}`, true); return; } throw err; }
+  }, btn);
+});
+load();
+</script>
+</body>
+</html>

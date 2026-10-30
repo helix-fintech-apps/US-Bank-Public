@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Credit score | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+<link rel="stylesheet" href="/assets/loans-credit.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <nav class="sv-sub" aria-label="Borrowing"><a href="/app/loans">Loans</a><a href="/app/credit" aria-current="page">Credit score</a></nav>
+  <div id="view" aria-live="polite"><p class="sv-muted">Loading…</p></div>
+</div></main>
+<script type="module">
+import { api, shell, money, esc } from '/assets/client.js';
+import { day, when } from '/assets/servicing.js';
+shell('/app/credit');
+const $ = s => document.querySelector(s), view = $('#view');
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const mon = iso => MON[Number(iso.slice(5, 7)) - 1];
+const pts = n => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
+const head = '<div class="sv-h"><div><h1>Credit score</h1><p>Free monitoring, educational only. It is not the score we use to decide on loans.</p></div></div>';
+
+// Semicircle gauge, 300–850: a light track with the score's share filled in brand blue.
+function gauge(score) {
+  const f = (score - 300) / 550, a = Math.PI * (1 - f), r = 80, cx = 100, cy = 100;
+  const x = cx + r * Math.cos(a), y = cy - r * Math.sin(a);
+  return `<svg viewBox="0 0 200 124" role="img" aria-label="Score ${score} on a scale of 300 to 850">
+    <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#e8f0fc" stroke-width="16" stroke-linecap="round"/>
+    <path d="M20 100 A80 80 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)}" fill="none" stroke="#1a56b8" stroke-width="16" stroke-linecap="round"/>
+    <circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="9" fill="#0c2d63" stroke="#fff" stroke-width="3"/>
+    <text x="20" y="122" font-size="10" fill="#55617a" text-anchor="middle">300</text><text x="180" y="122" font-size="10" fill="#55617a" text-anchor="middle">850</text></svg>`;
+}
+
+// 12-month line: 2px line, small markers, a recessive grid, a native tooltip per point.
+function history(h, W) {
+  const H = 190, L = 36, R = 12, T = 14, B = 26;
+  const lo = Math.floor((Math.min(...h.map(p => p.score)) - 10) / 10) * 10, hi = Math.ceil((Math.max(...h.map(p => p.score)) + 10) / 10) * 10;
+  const X = i => L + (i * (W - L - R)) / (h.length - 1), Y = s => T + ((hi - s) * (H - T - B)) / (hi - lo);
+  const grid = [lo, Math.round((lo + hi) / 2), hi].map(v => `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#dde3ec"/><text x="${L - 6}" y="${Y(v) + 4}" font-size="11" fill="#55617a" text-anchor="end">${v}</text>`).join('');
+  const line = h.map((p, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(p.score).toFixed(1)}`).join(' ');
+  const dots = h.map((p, i) => `<g><circle cx="${X(i)}" cy="${Y(p.score)}" r="12" fill="transparent"><title>${mon(p.month)} ${p.month.slice(0, 4)}: ${p.score}</title></circle>
+    <circle cx="${X(i)}" cy="${Y(p.score)}" r="4" fill="#1a56b8" stroke="#fff" stroke-width="2" pointer-events="none"/></g>`).join('');
+  const step = W < 420 ? 3 : 2;
+  const labels = h.map((p, i) => (i > h.length - 4 || (h.length - 1 - i) % step ? '' : `<text x="${X(i)}" y="${H - 6}" font-size="11" fill="#55617a" text-anchor="middle">${mon(p.month)}</text>`)).join('')
+    + `<text x="${X(h.length - 1)}" y="${H - 6}" font-size="11" fill="#0f1b2d" font-weight="700" text-anchor="end">Now ${h.at(-1).score}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Score history for the last 12 months, from ${h[0].score} to ${h.at(-1).score}">${grid}<path d="${line}" fill="none" stroke="#1a56b8" stroke-width="2" stroke-linejoin="round"/>${dots}${labels}</svg>`;
+}
+
+const RATING = { good: 'ok', fair: 'warn', poor: 'bad' };
+const factor = f => `<li class="cs-factor"><div><div class="d">${esc(f.label)} <span class="lc-pill ${RATING[f.rating]}">${esc(f.rating)}</span></div><div class="m">${esc(f.detail)}</div></div>
+  <div class="a ${f.impact > 0 ? 'pos' : f.impact < 0 ? 'neg' : ''}" aria-label="${pts(f.impact)} points">${pts(f.impact)} pts</div></li>`;
+const alert = a => `<li class="${a.read ? '' : 'unread'}" data-id="${esc(a.id)}"><span class="dot" aria-hidden="true"></span>
+  <div><div class="ti">${a.read ? '' : '<span class="skip">Unread: </span>'}${esc(a.title)}</div><div class="bd">${esc(a.body)}</div>
+  ${a.read ? '' : '<button class="btn sv-btn sm ghost mark" style="margin-top:8px">Mark as read</button>'}</div>
+  <time datetime="${esc(a.createdAt)}">${esc(when(a.createdAt))}</time></li>`;
+
+function alerts(c) {
+  $('#alerts').innerHTML = c.alerts.map(alert).join('') || '<li class="sv-empty">No alerts. We\'ll tell you about new hard pulls, new accounts and big score moves.</li>';
+  $('#unread-txt').textContent = c.unread ? `· ${c.unread} unread` : '';
+  $('#allread').disabled = !c.unread;
+}
+
+async function load() {
+  // A minor can't see a score: say so without asking the API (which would answer 403 and log a console error).
+  const me = await api('GET', '/api/me');
+  if (me.user?.isMinor) { view.innerHTML = `${head}<p class="err" role="alert">You must be 18 or older to apply for credit or see a credit score.</p>`; return; }
+  const c = await api('GET', '/api/credit');
+  view.innerHTML = `${head}
+    <p class="sv-note lc-note" role="note"><b>Simulated: no real credit bureau.</b> This score, its history, pulls and alerts are made up by the demo from your USA Banc accounts. Educational only.</p>
+    <div class="sv-grid">
+      <div>
+        <div class="cs-top">
+          <section class="sv-card cs-gauge" aria-labelledby="g-h"><header><h2 id="g-h">Your score</h2><span class="sv-muted">${esc(day(c.asOf))}</span></header>
+            <div class="sv-pad">${gauge(c.score)}<div class="score" id="score">${c.score}</div><div class="band" id="band">${esc(c.band)}</div>
+            <p class="sv-muted">${c.change === 0 ? 'No change since last month' : `${pts(c.change)} points since last month`}</p><p class="sv-muted">${esc(c.model)}</p></div></section>
+          <section class="sv-card cs-hist" aria-labelledby="h-h"><header><h2 id="h-h">Last 12 months</h2></header><div class="sv-pad" id="chart"></div>
+            <details class="sv-more sv-pad lc-tight"><summary>Show as a table</summary><div class="lc-scroll"><table class="sv-tbl" id="hist-table"><thead><tr><th>Month</th><th class="n">Score</th></tr></thead><tbody>
+            ${c.history.map(p => `<tr><td>${mon(p.month)} ${p.month.slice(0, 4)}</td><td class="n">${p.score}</td></tr>`).join('')}</tbody></table></div></details></section>
+        </div>
+        <section class="sv-card" aria-labelledby="f-h"><header><h2 id="f-h">What's shaping your score</h2></header><ul class="sv-list" id="factors">${c.factors.map(factor).join('')}</ul></section>
+        <form class="sv-card" id="whatif" novalidate aria-labelledby="w-h"><header><h2 id="w-h">What if…</h2><span class="sv-muted">Nothing is saved</span></header><div class="sv-pad">
+          <div class="sv-form cs-whatif">
+            <label class="sv-fld"><span>Pay down cards by ($)</span><input class="sv-in" id="payDown" inputmode="decimal" placeholder="0.00"><small class="sv-muted">You owe ${money(c.cards.owed)} of ${money(c.cards.limit)}.</small></label>
+            <label class="sv-fld"><span>Open a new card, limit ($)</span><input class="sv-in" id="newCardLimit" inputmode="decimal" placeholder="0.00"><small class="sv-muted">Adds a hard pull.</small></label>
+            <label class="chk cs-miss"><input type="checkbox" id="miss"> Miss a payment</label>
+          </div>
+          <div class="sv-row lc-acts"><button class="btn pri sv-btn" id="sim-go">See my simulated score</button></div>
+          <p class="err" id="err" role="alert"></p><p class="cs-result" id="result" role="status"></p></div></form>
+        <section class="sv-card" aria-labelledby="i-h"><header><h2 id="i-h">Credit pulls</h2><span class="sv-muted">Last 24 months</span></header>
+          <ul class="sv-list" id="inquiries">${c.inquiries.map(i => `<li><div><div class="d">${esc(i.label)}</div><div class="m"><span>${esc(day(i.on))}</span><span>${esc(i.bureau)} bureau</span></div></div>
+            <div class="a"><span class="lc-pill ${i.kind === 'hard' ? 'warn' : ''}" title="${esc(i.note)}">${i.kind === 'hard' ? 'Hard pull' : 'Soft pull'}</span></div></li>`).join('') || '<li class="sv-empty">No pulls in the last 24 months.</li>'}</ul>
+          <p class="sv-muted sv-pad">Hard pulls count against your score for 12 months. Soft pulls (checking your rate, offers) only you see, and they never affect it.</p></section>
+      </div>
+      <div>
+        <section class="sv-card" aria-labelledby="al-h"><header><h2 id="al-h">Alerts <span class="sv-muted" id="unread-txt"></span></h2><button class="btn sv-btn sm ghost" id="allread">Mark all as read</button></header>
+          <ul class="sv-inbox" id="alerts"></ul></section>
+        <section class="sv-card" aria-labelledby="o-h"><header><h2 id="o-h">Prequalified offers</h2></header>
+          <ul class="sv-list" id="offers">${c.offers.map(o => `<li class="offer"><div><div class="d">${esc(o.name)}</div><div class="m"><span>From ${esc(o.apr)}% APR</span><span>up to ${money(o.upTo)}</span><span>${esc(o.terms)}</span></div>
+            <div class="m"><span>Good until ${esc(day(o.expiresOn))}</span></div></div><div class="a"><a class="btn sv-btn sm ghost" href="${esc(o.href)}" aria-label="See my rate: ${esc(o.name)}">See my rate</a></div></li>`).join('') || '<li class="sv-empty">No prequalified offers right now.</li>'}</ul>
+          <p class="sv-muted sv-pad">From a soft pull: no effect on your score. Offers expire and aren't a promise to lend.</p></section>
+      </div>
+    </div>`;
+  const draw = () => { const w = $('#chart').clientWidth; $('#chart').innerHTML = history(c.history, Math.max(280, Math.min(640, Math.round(w)))); };
+  draw(); addEventListener('resize', draw);
+  alerts(c);
+  const mark = async body => { try { await api('POST', '/api/credit/alerts/read', body); alerts(await api('GET', '/api/credit')); } catch (e) { $('#err').textContent = e.message; } };
+  $('#allread').onclick = () => mark({ all: true });
+  $('#alerts').addEventListener('click', e => { const b = e.target.closest('.mark'); if (b) mark({ ids: [b.closest('li').dataset.id] }); });
+  $('#whatif').onsubmit = async e => {
+    e.preventDefault(); $('#err').textContent = ''; $('#sim-go').disabled = true;
+    try {
+      const s = await api('POST', '/api/credit/simulate', { payDown: $('#payDown').value.trim(), newCardLimit: $('#newCardLimit').value.trim(), missPayment: $('#miss').checked });
+      $('#result').textContent = `Simulated score: ${s.score} (${s.band}), ${s.change === 0 ? 'no change' : `${pts(s.change)} points`} from today's ${s.current}.`;
+    } catch (err) { $('#err').textContent = err.message; } finally { $('#sim-go').disabled = false; }
+  };
+}
+try { await load(); } catch (e) { view.innerHTML = `${head}<p class="err" role="alert">${esc(e.message)}</p>`; }
+</script>
+</body>
+</html>

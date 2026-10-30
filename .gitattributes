@@ -1,0 +1,5 @@
+# Keep LF in the repo and in every checkout, so deployed files and the seed version are the same on Windows and Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

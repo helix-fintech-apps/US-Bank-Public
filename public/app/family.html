@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+<link rel="stylesheet" href="/assets/accounts-family.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="sv-h"><div><h1 id="title">Family</h1><p id="lead">Spending limits, allowance, card freeze, chores and savings goals for the young people in your family, and the accounts you share.</p></div></div>
+  <p class="err" id="err" role="alert"></p>
+  <div id="family" aria-live="polite"><p class="sub">Loading…</p></div>
+</div></main>
+<script type="module">
+import { api, shell, money, esc, newKey } from '/assets/client.js';
+import { subnav } from '/assets/accounts-family.js';
+shell('/app/family');
+subnav('/app/family');
+const $ = s => document.querySelector(s);
+const MODE = { managed: 'Managed', view_only: 'View only' };
+const CHORE = { open: 'To do', submitted: 'Done, waiting for approval', paid: 'Paid' };
+let data = null;
+
+const when = d => esc(new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }));
+const opts = (list, sel) => list.map(a => `<option value="${esc(a.id)}"${a.id === sel ? ' selected' : ''}>${esc(a.name)} ··${esc(a.last4)} (${money(a.balance)})</option>`).join('');
+
+function goalsPanel(f, canEdit) {
+  return `<div class="fam-panel"><h3>Savings goals</h3>
+    <p class="sub" style="font-size:13px">Set-aside money stays in the account. ${money(f.freeToSetAside)} free to set aside.</p>
+    <ul class="af-list">${f.goals.map(g => `<li class="goal"><div><b>${esc(g.name)}</b> <span class="dt">${money(g.saved)} of ${money(g.target)}${g.targetDate ? ` · by <span class="nowrap">${esc(g.targetDate)}</span>` : ''}</span></div>
+      <span class="meter" role="img" aria-label="${esc(g.pct)} percent saved"><i style="width:${esc(g.pct)}%"></i></span>
+      ${canEdit ? `<div class="fam-row"><input class="sa-amt" aria-label="Amount for ${esc(g.name)}" inputmode="decimal" placeholder="5.00">
+        <button class="btn sm" data-act="aside" data-id="${esc(g.id)}">Set aside</button><button class="btn sm" data-act="release" data-id="${esc(g.id)}">Take back</button></div>` : ''}</li>`).join('') || '<li class="sub">No goals yet.</li>'}</ul>
+    ${canEdit ? `<form class="fam-row" data-act="goal"><label class="af-f"><span>Goal</span><input name="name" placeholder="New bike"></label>
+      <label class="af-f"><span>Target</span><input name="target" inputmode="decimal" placeholder="250.00"></label>
+      <label class="af-f"><span>By (optional)</span><input name="targetDate" type="date"></label><button class="btn">Add goal</button></form>` : ''}
+    <p class="af-err" role="alert"></p></div>`;
+}
+function activityPanel(f) {
+  return `<div class="fam-panel wide"><h3>Recent decisions and changes</h3><ul class="af-list">${f.activity.map(e => `<li><span class="grow">${esc(e.text)}</span><span class="dt">${esc(e.who)} · ${when(e.at)}</span></li>`).join('') || '<li class="sub">Nothing yet.</li>'}</ul></div>`;
+}
+const summary = f => `<div class="fam-stats"><div>Spent today<b>${money(f.controls.spentToday)}</b>of ${money(f.controls.dailyLimit)} · ${money(f.controls.leftToday)} left</div>
+  <div>Spent in 7 days<b>${money(f.controls.spentWeek)}</b>of ${money(f.controls.weeklyLimit)} · ${money(f.controls.leftWeek)} left</div></div>`;
+const status = f => `${f.controls.accountFrozen ? '<span class="af-badge frozen">Account frozen</span> ' : ''}${f.controls.cardFrozen ? '<span class="af-badge frozen">Card frozen</span>' : ''}`;
+
+function parentCard(f) {
+  const c = f.controls, m = f.canManage, dis = m ? '' : ' disabled';
+  const al = f.allowances[0];
+  return `<section class="af-card fam" data-id="${esc(f.account.id)}">
+    <div class="fam-head"><div><h2>${esc(f.account.name)} ··${esc(f.account.last4)}</h2>
+      <div class="who">${esc(f.minor?.name ?? '')}${f.minor?.age != null ? `, age ${f.minor.age}` : ''} · ${f.minor?.hasLogin ? 'has their own login' : 'no login (you manage it)'} ${status(f)}</div>
+      <div class="bal">${money(f.account.balance)}</div></div>
+      <div><div class="seg" role="group" aria-label="Mode">${Object.entries(MODE).map(([k, v]) => `<button type="button" data-act="mode" data-mode="${k}" aria-pressed="${c.mode === k}">${v}</button>`).join('')}</div>
+        <p class="sub" style="font-size:12px;margin:6px 0 0;max-width:260px">${c.mode === 'managed' ? 'You set limits, allowance and chores.' : 'You can watch and freeze. Limits stay as they are, and money stays in the account. Switching back to managed asks for a one-time code.'}</p></div></div>
+    <div class="fam-panels">
+      <div class="fam-panel"><h3>Spending controls</h3>${summary(f)}
+        <form data-act="controls"><div class="fam-row" style="margin-top:4px"><label class="af-f"><span>Daily limit</span><input name="dailyLimit" inputmode="decimal" value="${esc(c.dailyLimit)}"${dis}></label>
+          <label class="af-f"><span>7-day limit</span><input name="weeklyLimit" inputmode="decimal" value="${esc(c.weeklyLimit)}"${dis}></label></div>
+          <p class="sub" style="font-size:13px;margin:12px 0 0">Turn off purchases at:</p>
+          <div class="cats">${data.categories.map(k => `<label><input type="checkbox" name="cat" value="${esc(k)}"${c.heldCategories.includes(k) ? ' checked' : ''}${dis}> ${esc(k)}</label>`).join('')}</div>
+          <p class="sub" style="font-size:12px">Highest limits: ${money(data.maxLimits.daily)} a day, ${money(data.maxLimits.weekly)} in 7 days. Raising a limit asks for a one-time code.</p>
+          <div class="af-actions" style="margin-top:8px"><button class="btn pri"${dis}>Save controls</button></div></form>
+        <p class="af-err" role="alert"></p></div>
+      <div class="fam-panel"><h3>Freeze</h3><p class="sub" style="font-size:13px">Freezing stops new spending right away. Unfreezing asks for a one-time code. Works in either mode. Freezing the card is the same as locking it on the Cards page.</p>
+        <div class="fam-row"><button class="btn ${c.cardFrozen ? 'pri' : 'warn'}" data-act="freeze" data-target="card" data-frozen="${!c.cardFrozen}">${c.cardFrozen ? 'Unfreeze card' : 'Freeze card'}</button>
+          <button class="btn ${c.accountFrozen ? 'pri' : 'warn'}" data-act="freeze" data-target="account" data-frozen="${!c.accountFrozen}">${c.accountFrozen ? 'Unfreeze account' : 'Freeze account'}</button></div>
+        <p class="af-err" role="alert"></p>
+        <h3 style="margin-top:18px">Allowance</h3>
+        ${al ? `<p>${money(al.amount)} every ${al.cadence === 'weekly' ? 'week' : 'month'} from ${esc(al.from)}. Next on <b class="nowrap">${esc(al.nextRunOn)}</b>.</p>
+          <div class="fam-row"><button class="btn sm warn" data-act="stop" data-aid="${esc(al.id)}">Stop allowance</button><button class="btn sm" data-act="run">Pay due allowances now</button></div>`
+        : `<form class="fam-row" data-act="allowance"><label class="af-f"><span>Amount</span><input name="amount" inputmode="decimal" placeholder="10.00"${dis}></label>
+          <label class="af-f"><span>How often</span><select name="cadence"${dis}><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+          <label class="af-f" style="flex-basis:100%"><span>From</span><select name="fromAccountId"${dis}>${opts(data.payFrom)}</select></label>
+          <label class="af-f"><span>First payment</span><input name="startOn" type="date"${dis}></label><button class="btn pri"${dis}>Start allowance</button></form>`}
+        ${f.allowanceRuns.length ? `<ul class="af-list" style="margin-top:8px">${f.allowanceRuns.map(r => `<li><span class="grow">${esc(r.runOn)}${r.reason ? ` <span class="dt">· ${esc(r.reason)}</span>` : ''}</span><span class="af-badge ${esc(r.status)}">${esc(r.status)}</span></li>`).join('')}</ul>` : ''}
+        <p class="af-err" role="alert"></p></div>
+      <div class="fam-panel"><h3>Chores</h3>
+        <label class="af-f" style="margin-bottom:6px"><span>Pay rewards from</span><select class="pay-from"${dis}>${opts(data.payFrom)}</select></label>
+        <ul class="af-list">${f.chores.map(ch => `<li><span class="grow">${esc(ch.title)} <span class="dt">· ${money(ch.reward)} · ${esc(CHORE[ch.status])}</span></span>
+          ${ch.status !== 'paid' ? `<span><button class="btn sm pri" data-act="approve" data-id="${esc(ch.id)}"${dis}>Approve &amp; pay</button> <button class="btn sm" data-act="cancel" data-id="${esc(ch.id)}"${dis}>Remove</button></span>` : '<span class="af-badge paid">Paid</span>'}</li>`).join('') || '<li class="sub">No chores yet.</li>'}</ul>
+        <form class="fam-row" data-act="chore"><label class="af-f"><span>Chore</span><input name="title" placeholder="Take out the trash"${dis}></label>
+          <label class="af-f"><span>Reward</span><input name="reward" inputmode="decimal" placeholder="3.00"${dis}></label><button class="btn"${dis}>Add chore</button></form>
+        <p class="af-err" role="alert"></p></div>
+      ${goalsPanel(f, m)}
+      ${activityPanel(f)}
+    </div></section>`;
+}
+
+function minorCard(f) {
+  const c = f.controls, al = f.allowances[0];
+  return `<section class="af-card fam" data-id="${esc(f.account.id)}">
+    <div class="fam-head"><div><h2>${esc(f.account.name)} ··${esc(f.account.last4)}</h2><div class="who">Managed by ${esc(f.parentName ?? 'a parent')} · ${esc(MODE[c.mode])} ${status(f)}</div>
+      <div class="bal">${money(f.account.balance)}</div></div></div>
+    <div class="fam-panels">
+      <div class="fam-panel"><h3>Your limits</h3>${summary(f)}
+        <p class="sub" style="font-size:13px">${c.heldCategories.length ? `Turned off: ${c.heldCategories.map(esc).join(', ')}.` : 'No store types are turned off.'} Card: ${c.cardFrozen ? 'frozen' : 'on'}.</p>
+        <p class="sub" style="font-size:13px">${al ? `Allowance: ${money(al.amount)} every ${al.cadence === 'weekly' ? 'week' : 'month'}, next on ${esc(al.nextRunOn)}.` : 'No allowance set up.'}</p>
+        <h3 style="margin-top:14px">Try a purchase <span class="af-sim">Simulated</span></h3>
+        <p class="sub" style="font-size:13px">Practice a card purchase to see what your limits allow. It takes real demo money from your balance; no store is paid.</p>
+        <form class="fam-row" data-act="purchase"><label class="af-f"><span>Store</span><input name="merchant" placeholder="Corner Market"></label>
+          <label class="af-f"><span>Amount</span><input name="amount" inputmode="decimal" placeholder="4.50"></label>
+          <label class="af-f" style="flex-basis:100%"><span>Type of store</span><select name="category">${data.categories.map(k => `<option>${esc(k)}</option>`).join('')}</select></label>
+          <button class="btn pri">Buy</button></form>
+        <p class="af-err" role="alert"></p><p class="af-ok" role="status"></p></div>
+      <div class="fam-panel"><h3>Chores</h3><ul class="af-list">${f.chores.map(ch => `<li><span class="grow">${esc(ch.title)} <span class="dt">· ${money(ch.reward)}</span></span>
+        ${ch.status === 'open' ? `<button class="btn sm pri" data-act="submit" data-id="${esc(ch.id)}">I did it</button>` : `<span class="af-badge ${esc(ch.status)}">${esc(CHORE[ch.status])}</span>`}</li>`).join('') || '<li class="sub">No chores right now.</li>'}</ul>
+        <p class="af-err" role="alert"></p></div>
+      ${goalsPanel(f, true)}
+      ${activityPanel(f)}
+    </div></section>`;
+}
+
+// Joint accounts: who else owns each one, and invitations still waiting for the other person.
+function sharedCard(sh) {
+  if (!sh || (!sh.accounts.length && !sh.invites.length)) return '';
+  return `<section class="af-card fam-shared" aria-labelledby="shared-h"><h2 id="shared-h">Accounts you share</h2>
+    <p class="sub">Every joint owner can see and use all the money in a joint account.</p>
+    <ul class="af-list">${sh.accounts.map(a => `<li><span class="grow"><b>${esc(a.name)} ··${esc(a.last4)}</b> <span class="dt">· with ${a.coOwners.map(esc).join(', ')}</span></span>
+      <span class="bal-s">${money(a.balance)}</span></li>`).join('')}
+    ${sh.invites.map(i => `<li><span class="grow">${esc(i.account.name)} ··${esc(i.account.last4)} <span class="dt">· invited ${esc(i.invitee)}</span></span>
+      <span class="af-badge pending">Waiting for them</span></li>`).join('')}</ul>
+    <div class="af-actions"><a class="btn" href="/app/open?product=joint">Open a joint account</a></div></section>`;
+}
+
+async function load() {
+  try {
+    data = await api('GET', '/api/family');
+    $('#err').textContent = '';
+    if (data.role === 'minor') { $('#title').textContent = 'My money'; $('#lead').textContent = 'Your account, your limits, chores and savings goals. A parent manages the controls.'; }
+    $('#family').innerHTML = data.role === 'none'
+      ? `<div class="af-card fam-empty"><h2>No family accounts yet</h2><p class="sub">Open Teen Checking (ages 13 to 17) or Custodial Savings for a child, then manage it here.</p>
+         <p><a class="btn pri" href="/app/open?for=child">Open an account for a child</a></p></div>`
+      : data.accounts.map(f => (f.role === 'custodian' ? parentCard(f) : minorCard(f))).join('');
+    $('#family').insertAdjacentHTML('beforeend', sharedCard(data.shared));
+  } catch (e) { $('#err').textContent = e.message; }
+}
+
+// one handler for every button and form on the page
+async function act(el, e) {
+  const card = el.closest('.fam'), id = card?.dataset.id, f = data.accounts.find(x => x.account.id === id);
+  const panel = el.closest('.fam-panel') ?? card, err = panel.querySelector('.af-err'), ok = panel.querySelector('.af-ok');
+  const form = el.tagName === 'FORM' ? Object.fromEntries(new FormData(el)) : {};
+  const payFrom = () => card.querySelector('.pay-from')?.value;
+  const calls = {
+    mode: () => api('POST', `/api/family/${id}/mode`, { mode: el.dataset.mode }),
+    controls: () => api('POST', `/api/family/${id}/controls`, { dailyLimit: form.dailyLimit, weeklyLimit: form.weeklyLimit, heldCategories: new FormData(el).getAll('cat') }),
+    freeze: () => api('POST', `/api/family/${id}/freeze`, { target: el.dataset.target, frozen: el.dataset.frozen === 'true' }),
+    allowance: () => api('POST', `/api/family/${id}/allowances`, { amount: form.amount, cadence: form.cadence, fromAccountId: form.fromAccountId, startOn: form.startOn || undefined }),
+    stop: () => api('DELETE', `/api/family/${id}/allowances/${el.dataset.aid}`, {}),
+    run: () => api('POST', '/api/family/allowances/run', {}),
+    chore: () => api('POST', `/api/family/${id}/chores`, { title: form.title, reward: form.reward }),
+    approve: () => api('POST', `/api/chores/${el.dataset.id}/approve`, { fromAccountId: payFrom(), idempotencyKey: el.dataset.key ??= newKey() }),
+    cancel: () => api('POST', `/api/chores/${el.dataset.id}/cancel`, {}),
+    submit: () => api('POST', `/api/chores/${el.dataset.id}/submit`, {}),
+    goal: () => api('POST', `/api/family/${id}/goals`, { name: form.name, target: form.target, targetDate: form.targetDate || undefined }),
+    aside: () => api('POST', `/api/goals/${el.dataset.id}/set-aside`, { amount: el.closest('li').querySelector('.sa-amt').value }),
+    release: () => api('POST', `/api/goals/${el.dataset.id}/set-aside`, { amount: el.closest('li').querySelector('.sa-amt').value, release: true }),
+    purchase: () => api('POST', `/api/family/${id}/purchase`, { ...form, idempotencyKey: el.dataset.key ??= newKey() })
+  };
+  const run = calls[el.dataset.act]; if (!run || (!f && el.dataset.act !== 'run')) return;
+  e.preventDefault();
+  if (err) err.textContent = ''; if (ok) ok.textContent = '';
+  el.querySelectorAll?.('button').forEach(b => { b.disabled = true; }); if (el.tagName === 'BUTTON') el.disabled = true;
+  try {
+    await run();
+    const note = el.dataset.act === 'purchase' ? `Approved: ${money(form.amount.replace(/[$,]/g, ''))} at ${form.merchant}.` : '';
+    await load();
+    if (note) { const p = document.querySelector(`.fam[data-id="${id}"] .af-ok`); if (p) p.textContent = note; }
+  } catch (x) {
+    if (x.status) delete el.dataset.key;                                // refused: a retry is a new request; no answer: retry with the same key
+    if (err) err.textContent = x.code === 'cancelled' ? 'You need to confirm the code for that change.' : x.message;
+    el.querySelectorAll?.('button').forEach(b => { b.disabled = false; }); if (el.tagName === 'BUTTON') el.disabled = false;
+  }
+}
+$('#family').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (b) act(b, e); });
+$('#family').addEventListener('submit', e => { const fm = e.target.closest('form[data-act]'); if (fm) act(fm, e); });
+load();
+</script>
+</body>
+</html>

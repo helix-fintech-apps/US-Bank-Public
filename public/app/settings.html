@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Settings | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=2" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="sv-h"><div><h1>Settings</h1><p>Your contact details, sign-in security, overdraft coverage and messages with us.</p></div></div>
+  <p class="err" id="err" role="alert"></p>
+  <div class="sv-set">
+    <nav class="sv-side" aria-label="Settings sections">
+      <a href="#profile">Profile</a><a href="#security">Security</a><a href="#overdraft">Overdraft</a><a href="#messages">Messages</a>
+    </nav>
+    <div>
+      <!-- Profile -->
+      <section id="profile" aria-labelledby="p-h">
+        <h2 id="p-h">Profile</h2>
+        <div class="sv-card">
+          <header><h3 style="font-size:16px">Contact details</h3><button class="btn sv-btn sm ghost" id="p-edit">Edit</button></header>
+          <div class="sv-pad">
+            <dl class="sv-kv" id="p-view"></dl>
+            <form id="p-form" hidden novalidate>
+              <div class="sv-form">
+                <label class="sv-fld wide"><span>Email</span><input class="sv-in" id="p-email" type="email" autocomplete="email" maxlength="254"></label>
+                <label class="sv-fld wide"><span>Mobile phone (US)</span><input class="sv-in" id="p-phone" type="tel" autocomplete="tel-national" maxlength="20"></label>
+                <label class="sv-fld wide"><span>Street address</span><input class="sv-in" id="p-line1" autocomplete="address-line1" maxlength="80"></label>
+                <label class="sv-fld wide"><span>Apartment, suite (optional)</span><input class="sv-in" id="p-line2" autocomplete="address-line2" maxlength="80"></label>
+                <label class="sv-fld"><span>City</span><input class="sv-in" id="p-city" autocomplete="address-level2" maxlength="40"></label>
+                <label class="sv-fld"><span>State</span><input class="sv-in" id="p-state" autocomplete="address-level1" maxlength="2" placeholder="TX"></label>
+                <label class="sv-fld"><span>ZIP code</span><input class="sv-in" id="p-zip" autocomplete="postal-code" inputmode="numeric" maxlength="10"></label>
+              </div>
+              <p class="sv-muted" style="margin-top:10px">For your security we'll ask for a one-time code before saving.</p>
+              <p class="sv-err" id="p-err" role="alert"></p>
+              <div class="sv-row"><button class="btn pri sv-btn">Save changes</button><button type="button" class="btn sv-btn ghost" id="p-cancel">Cancel</button></div>
+            </form>
+            <div id="p-notices" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="sv-card sv-pad">
+          <div class="sv-switch"><div class="t"><b id="es-l">Paperless statements</b><span class="sv-muted">Read statements in the app. Simulated: nothing is mailed either way.</span></div>
+            <button role="switch" id="estatements" aria-checked="true" aria-labelledby="es-l"></button></div>
+        </div>
+      </section>
+
+      <!-- Security -->
+      <section id="security" aria-labelledby="s-h">
+        <h2 id="s-h">Security</h2>
+        <div class="sv-card sv-pad">
+          <div class="sv-switch"><div class="t"><b id="mfa-l">Ask for a one-time code when I sign in</b><span class="sv-muted" id="mfa-sub">A code goes to your phone after your password.</span></div>
+            <button role="switch" id="mfa" aria-checked="false" aria-labelledby="mfa-l"></button></div>
+          <p class="sv-err" id="mfa-err" role="alert"></p>
+        </div>
+        <form class="sv-card" id="pw" novalidate aria-labelledby="pw-h">
+          <header><h3 id="pw-h" style="font-size:16px">Change password</h3></header>
+          <div class="sv-pad">
+            <div class="sv-form">
+              <label class="sv-fld wide"><span>Current password</span><input class="sv-in" id="pw-cur" type="password" autocomplete="current-password"></label>
+              <label class="sv-fld"><span>New password</span><input class="sv-in" id="pw-new" type="password" autocomplete="new-password"></label>
+              <label class="sv-fld"><span>New password again</span><input class="sv-in" id="pw-new2" type="password" autocomplete="new-password"></label>
+            </div>
+            <p class="sv-muted" style="margin-top:10px" id="pw-rule">At least 10 characters with letters and numbers, not your username. Your other devices will be signed out.</p>
+            <p class="sv-err" id="pw-err" role="alert"></p><p class="sv-ok" id="pw-ok" role="status"></p>
+            <button class="btn pri sv-btn">Change password</button>
+          </div>
+        </form>
+        <div class="sv-card">
+          <header><h3 style="font-size:16px">Signed-in devices</h3><button class="btn sv-btn sm danger" id="everywhere">Sign out everywhere</button></header>
+          <ul class="sv-dev" id="devices"></ul>
+        </div>
+        <div class="sv-card">
+          <header><h3 style="font-size:16px">Recent sign-in activity</h3></header>
+          <table class="sv-tbl"><thead><tr><th>When</th><th>What</th><th class="hide-sm">Device</th><th class="hide-sm">IP address</th></tr></thead><tbody id="signins"></tbody></table>
+        </div>
+      </section>
+
+      <!-- Overdraft -->
+      <section id="overdraft" aria-labelledby="o-h">
+        <h2 id="o-h">Overdraft</h2>
+        <div class="sv-card">
+          <header><h3 style="font-size:16px">Overdraft coverage</h3></header>
+          <ul class="sv-dev" id="od"></ul>
+          <div class="sv-pad" style="border-top:1px solid var(--line)" id="od-help"></div>
+        </div>
+      </section>
+
+      <!-- Messages -->
+      <section id="messages" aria-labelledby="m-h">
+        <h2 id="m-h">Messages</h2>
+        <div class="sv-card">
+          <header><h3 style="font-size:16px">Secure messages</h3><button class="btn sv-btn sm pri" id="m-new">New message</button></header>
+          <div class="sv-split">
+            <ul class="sv-threads" id="threads"></ul>
+            <div id="thread"><p class="sv-empty">Choose a conversation.</p></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div></main>
+<script type="module">
+import { api, shell, money, esc } from '/assets/client.js';
+import { subnav, wireSwitch, when } from '/assets/servicing.js';
+shell('/app/settings'); subnav('/app/settings');
+const $ = s => document.querySelector(s);
+const fail = (el, e) => { if (e.code !== 'cancelled') el.textContent = e.message; };
+
+// ----- profile -----
+let prof;
+function showProfile(p) {
+  prof = p;
+  const a = p.address ?? {};
+  $('#p-view').innerHTML = [['Email', p.email], ['Mobile phone', p.phone], ['Mailing address', a.line1 ? [a.line1, a.line2, `${a.city}, ${a.state} ${a.zip}`].filter(Boolean).join('\n') : null]]
+    .map(([k, v]) => `<dt>${k}</dt><dd style="white-space:pre-line">${v ? esc(v) : '<span class="sv-muted">Not set</span>'}</dd>`).join('');
+  $('#estatements').setAttribute('aria-checked', String(p.estatements));
+}
+$('#p-edit').onclick = () => {
+  const a = prof.address ?? {};
+  Object.entries({ email: prof.email, phone: prof.phone, line1: a.line1, line2: a.line2, city: a.city, state: a.state, zip: a.zip }).forEach(([k, v]) => { $('#p-' + k).value = v ?? ''; });
+  $('#p-form').hidden = false; $('#p-view').hidden = true; $('#p-edit').hidden = true; $('#p-err').textContent = ''; $('#p-email').focus();
+};
+const closeForm = () => { $('#p-form').hidden = true; $('#p-view').hidden = false; $('#p-edit').hidden = false; };
+$('#p-cancel').onclick = closeForm;
+$('#p-form').addEventListener('submit', async e => {
+  e.preventDefault(); $('#p-err').textContent = '';
+  const v = id => $('#p-' + id).value.trim();
+  // Send only what changed, so an empty field the user never had (no phone on file, say) doesn't block saving the rest.
+  const digits = x => String(x ?? '').replace(/\D/g, ''), a = prof.address ?? {};
+  const body = {};
+  if (v('email').toLowerCase() !== String(prof.email ?? '').toLowerCase()) body.email = v('email');
+  if (digits(v('phone')) !== digits(prof.phone)) body.phone = v('phone');
+  const addr = { line1: v('line1'), line2: v('line2'), city: v('city'), state: v('state'), zip: v('zip') };
+  if (Object.keys(addr).some(k => addr[k] !== String(a[k] ?? ''))) body.address = addr;
+  try {
+    const r = Object.keys(body).length ? await api('PUT', '/api/profile', body) : { changed: [], notices: [], profile: prof };
+    showProfile(r.profile); closeForm();
+    $('#p-notices').innerHTML = (r.changed.length ? `<p class="sv-ok" style="margin-top:12px">Saved: ${esc(r.changed.join(', '))}.</p>` : '<p class="sv-muted" style="margin-top:12px">Nothing changed.</p>')
+      + r.notices.map(n => `<p class="sv-note" style="margin-top:8px">${esc(n)}</p>`).join('');
+  } catch (err) { fail($('#p-err'), err); }
+});
+wireSwitch($('#estatements'), on => api('PUT', '/api/profile/estatements', { enabled: on }), $('#err'));
+
+// ----- security -----
+async function loadSecurity() {
+  const s = await api('GET', '/api/security');
+  $('#mfa').setAttribute('aria-checked', String(s.mfaRequired)); $('#mfa').disabled = !s.canChangeMfa;
+  if (!s.canChangeMfa) $('#mfa-sub').textContent = 'Your parent or guardian manages this setting.';
+  $('#devices').innerHTML = s.sessions.map(d => `<li data-id="${esc(d.id)}"><div><b>${esc(d.device)}</b>${d.current ? '<span class="sv-tag">This device</span>' : ''}
+    <div class="sv-muted">Signed in ${esc(when(d.startedAt))} · last active ${esc(when(d.lastSeenAt))}</div></div>
+    <button class="btn sv-btn sm ghost out">Sign out${d.current ? ' here' : ''}</button></li>`).join('');
+  $('#signins').innerHTML = s.signins.map(e => `<tr><td>${esc(when(e.at))}</td><td>${esc(e.label)}</td><td class="hide-sm">${esc(e.device)}</td><td class="hide-sm">${esc(e.ip ?? '')}</td></tr>`).join('')
+    || '<tr><td colspan="4" class="sv-muted">No sign-ins yet.</td></tr>';
+}
+wireSwitch($('#mfa'), on => api('PUT', '/api/security/mfa', { required: on }), $('#mfa-err'));
+$('#devices').addEventListener('click', async e => {
+  const b = e.target.closest('.out'); if (!b) return;
+  try {
+    const r = await api('DELETE', `/api/security/sessions/${encodeURIComponent(b.closest('li').dataset.id)}`, {});
+    if (r.current) location.href = '/login'; else await loadSecurity();
+  } catch (err) { fail($('#err'), err); }
+});
+$('#everywhere').onclick = async () => {
+  if (!confirm('Sign out on every device, including this one?')) return;
+  try { await api('DELETE', '/api/session', { everywhere: true }, { auth: false }); } catch {}
+  location.href = '/login';
+};
+$('#pw').addEventListener('submit', async e => {
+  e.preventDefault(); $('#pw-err').textContent = ''; $('#pw-ok').textContent = '';
+  if ($('#pw-new').value !== $('#pw-new2').value) { $('#pw-err').textContent = "The new passwords don't match."; return; }
+  try {
+    const r = await api('POST', '/api/security/password', { current: $('#pw-cur').value, next: $('#pw-new').value });
+    $('#pw').reset(); $('#pw-ok').textContent = `Password changed. ${r.otherSessionsEnded} other ${r.otherSessionsEnded === 1 ? 'device was' : 'devices were'} signed out.`;
+    loadSecurity();
+  } catch (err) { fail($('#pw-err'), err); }
+});
+
+// ----- overdraft -----
+async function loadOverdraft() {
+  const o = await api('GET', '/api/overdraft');
+  $('#od').innerHTML = o.accounts.map(a => `<li data-id="${esc(a.id)}"><div class="sv-switch" style="flex:1"><div class="t"><b id="od-${esc(a.id)}">${esc(a.name)} ··${esc(a.last4)}</b>
+    <span class="sv-muted">${a.optedIn ? 'Covered (simulated): your choice is saved, but this demo still declines anything that would take the account below $0.00.' : 'Not covered: items that would overdraw this account are declined.'}${a.canChange ? '' : ' Your parent or guardian manages this setting.'}</span></div>
+    <button role="switch" aria-checked="${a.optedIn}" aria-labelledby="od-${esc(a.id)}"${a.canChange ? '' : ' disabled'}></button></div></li>`).join('')
+    || '<li class="sv-muted">You have no checking accounts.</li>';
+  document.querySelectorAll('#od button[role=switch]').forEach(b => wireSwitch(b, async on => { await api('PUT', `/api/overdraft/${encodeURIComponent(b.closest('li').dataset.id)}`, { optedIn: on }); loadOverdraft(); }, $('#err')));
+  $('#od-help').innerHTML = `<h4 style="margin:0 0 6px;font-size:15px">Overdraft fee forgiveness</h4>
+    <p style="font-size:14px">With real overdraft coverage, if an item overdraws your account the fee would be <b>${money(o.fee)}</b> (up to ${esc(o.maxFeesPerDay)} a day).
+    We waive it when you bring your available balance back to <b>$0.00 or more</b> by <b>${esc(o.deadline)}</b>. Overdrafts of ${money(o.smallOverdraft)} or less never get a fee.</p>
+    <p class="sv-note" style="margin-top:10px"><b>Simulated:</b> these are settings only. This demo bank never charges overdraft fees or lets an account go below $0.00.</p>`;
+}
+
+// ----- messages -----
+let current = null;
+async function loadThreads() {
+  const r = await api('GET', '/api/messages');
+  $('#threads').innerHTML = r.threads.map(t => `<li><button data-id="${esc(t.id)}" aria-pressed="${t.id === current}"><span class="s"><span>${esc(t.subject)}</span>${t.unread ? `<span class="sv-badge" aria-label="${t.unread} unread">${t.unread}</span>` : ''}</span>
+    <span class="l">${esc(t.last)}</span><span class="sv-muted">${esc(when(t.updatedAt))}</span></button></li>`).join('') || '<li class="sv-empty">No messages yet.</li>';
+}
+const replyForm = (id) => `<form class="sv-pad" id="reply" style="${id ? 'border-top:1px solid var(--line)' : 'padding-top:12px'}" novalidate>
+  <label class="sv-fld"><span>${id ? 'Reply' : 'Message'}</span><textarea class="sv-in" id="m-body" maxlength="2000" required></textarea></label>
+  <p class="sv-err" id="m-err" role="alert"></p><button class="btn pri sv-btn" style="margin-top:8px">Send</button></form>`;
+async function openThread(id) {
+  current = id;
+  const t = await api('GET', `/api/messages/${encodeURIComponent(id)}`);
+  $('#thread').innerHTML = `<h4 style="margin:0;padding:14px 18px 0;font-size:16px">${esc(t.subject)}</h4><div class="sv-chat">${t.messages.map(m =>
+    `<div class="sv-msg ${m.sender}">${esc(m.body)}<small>${m.sender === 'bank' ? 'USA Banc' : 'You'} · ${esc(when(m.at))}</small></div>`).join('')}</div>${replyForm(id)}`;
+  await loadThreads();
+}
+$('#threads').addEventListener('click', e => { const b = e.target.closest('button[data-id]'); if (b) openThread(b.dataset.id).catch(err => fail($('#err'), err)); });
+$('#m-new').onclick = () => {
+  current = null; document.querySelectorAll('#threads button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  $('#thread').innerHTML = `<div class="sv-pad" style="padding-bottom:0"><label class="sv-fld"><span>Subject</span><input class="sv-in" id="m-subj" maxlength="120"></label></div>${replyForm(null)}`;
+  $('#m-subj').focus();
+};
+$('#thread').addEventListener('submit', async e => {
+  e.preventDefault();
+  try {
+    const body = $('#m-body').value;
+    if (current) { await api('POST', `/api/messages/${encodeURIComponent(current)}`, { body }); await openThread(current); }
+    else { const r = await api('POST', '/api/messages', { subject: $('#m-subj').value, body }); await openThread(r.id); }
+  } catch (err) { fail($('#m-err'), err); }
+});
+
+// ----- section highlight -----
+const links = [...document.querySelectorAll('.sv-side a')];
+const mark = () => { const h = location.hash || '#profile'; links.forEach(a => a.setAttribute('aria-current', String(a.getAttribute('href') === h))); };
+addEventListener('hashchange', mark); mark();
+
+try {
+  const [p] = await Promise.all([api('GET', '/api/profile'), loadSecurity(), loadOverdraft(), loadThreads()]);
+  showProfile(p);
+  if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
+} catch (e) { fail($('#err'), e); }
+</script>
+</body>
+</html>

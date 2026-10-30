@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Statements | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=2" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="sv-h"><div><h1>Statements</h1><p>Monthly statements for your deposit accounts, built straight from the ledger.</p></div></div>
+  <p class="err" id="err" role="alert"></p>
+  <div class="sv-pills" id="accts" role="group" aria-label="Account"></div>
+  <div class="sv-grid st" id="body">
+    <div>
+      <section class="sv-card" aria-labelledby="m-h"><h2 id="m-h">Months</h2><ul class="sv-months" id="months"></ul></section>
+      <section class="sv-card sv-pad">
+        <div class="sv-switch"><div class="t"><b id="es-l">Paperless statements</b><span class="sv-muted">Get statements here instead of by mail.</span></div>
+          <button role="switch" id="estatements" aria-checked="true" aria-labelledby="es-l"></button></div>
+        <p class="sv-muted" style="margin-top:8px">Simulated: paper statements are never mailed in this demo.</p>
+      </section>
+    </div>
+    <section class="sv-card" aria-labelledby="st-h" id="st">
+      <header><h2 id="st-h">Statement</h2><a class="btn pri sv-btn" id="pdf" download hidden>Download PDF</a></header>
+      <div class="sv-tiles" id="tiles"></div>
+      <table class="sv-tbl"><thead><tr><th>Date</th><th>Description</th><th class="n">Amount</th><th class="n hide-sm">Balance</th></tr></thead><tbody id="lines"><tr><td colspan="4" class="sv-muted">Loading…</td></tr></tbody></table>
+    </section>
+  </div>
+</div></main>
+<script type="module">
+import { api, shell, money, esc } from '/assets/client.js';
+import { subnav, wireSwitch, day, monthName } from '/assets/servicing.js';
+shell('/app/statements'); subnav('/app/statements');
+const $ = s => document.querySelector(s);
+let acct = null;
+
+async function showMonth(m) {
+  document.querySelectorAll('#months button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === m)));
+  try {
+    const s = await api('GET', `/api/statements/${encodeURIComponent(acct)}/${encodeURIComponent(m)}`);
+    $('#st-h').textContent = `${s.account.name} ··${s.account.last4} · ${monthName(s.month)}${s.partial ? ' (so far)' : ''}`;
+    const pdfUrl = `/api/statements/${encodeURIComponent(acct)}/${encodeURIComponent(m)}/pdf`;
+    $('#pdf').href = pdfUrl; $('#pdf').hidden = false;
+    $('#tiles').innerHTML = [['Opening balance', money(s.opening)], ['Money in', '+' + money(s.moneyIn)], ['Money out', '-' + money(s.moneyOut)], ['Closing balance', money(s.closing)]]
+      .map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+    $('#lines').innerHTML = s.lines.map(l => `<tr><td>${day(l.postedOn)}</td><td>${esc(l.description)}</td>
+      <td class="n ${l.amount.startsWith('-') ? '' : 'pos'}">${l.amount.startsWith('-') ? '' : '+'}${money(l.amount)}</td><td class="n hide-sm">${money(l.balance)}</td></tr>`).join('')
+      || '<tr><td colspan="4" class="sv-muted">No transactions in this period.</td></tr>';
+    $('#lines').insertAdjacentHTML('beforeend', `<tr><td colspan="2"><b>Period ${day(s.periodStart)} to ${day(s.periodEnd)}</b></td><td class="n" colspan="2"><b>Closing ${money(s.closing)}</b></td></tr>`);
+  } catch (e) { $('#err').textContent = e.message; }
+}
+async function showAccount(id) {
+  acct = id;
+  document.querySelectorAll('#accts button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+  try {
+    const r = await api('GET', `/api/statements/${encodeURIComponent(id)}`);
+    $('#months').innerHTML = r.statements.map(s => `<li><button data-m="${esc(s.month)}" aria-pressed="false"><span>${esc(monthName(s.month))}</span>${s.partial ? '<span class="sv-muted">so far</span>' : ''}</button></li>`).join('');
+    if (r.statements[0]) showMonth(r.statements[0].month);
+  } catch (e) { $('#err').textContent = e.message; }
+}
+
+try {
+  const r = await api('GET', '/api/statements');
+  $('#estatements').setAttribute('aria-checked', String(r.estatements));
+  $('#accts').innerHTML = r.accounts.map(a => `<button data-id="${esc(a.id)}" aria-pressed="false">${esc(a.name)} ··${esc(a.last4)}</button>`).join('');
+  if (!r.accounts.length) $('#body').innerHTML = '<p class="sub">You have no deposit accounts with statements.</p>';
+  else showAccount(new URLSearchParams(location.search).get('account') ?? r.accounts[0].id);
+} catch (e) { $('#err').textContent = e.message; }
+$('#accts').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showAccount(b.dataset.id); });
+$('#months').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showMonth(b.dataset.m); });
+wireSwitch($('#estatements'), on => api('PUT', '/api/profile/estatements', { enabled: on }), $('#err'));
+</script>
+</body>
+</html>

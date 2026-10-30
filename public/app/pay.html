@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pay &amp; transfer | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/money-movement.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="mm-h"><div><h1>Pay &amp; transfer</h1><p>Move money between your accounts, to other banks and people, and pay bills.</p></div></div>
+  <p class="mm-sim" role="note"><b>Simulated:</b> no real ACH transfer, wire, bill payment or USA Pay payment is made. Money moves only between demo accounts.</p>
+  <p class="err" id="err" role="alert"></p>
+  <p class="mm-minor" id="minor" hidden></p>
+
+  <div class="mm-tabs" role="tablist" aria-label="Ways to pay">
+    <button role="tab" id="t-transfer" aria-controls="p-transfer" data-tab="transfer">Transfer</button>
+    <button role="tab" id="t-p2p" aria-controls="p-p2p" data-tab="p2p">USA Pay</button>
+    <button role="tab" id="t-ach" aria-controls="p-ach" data-tab="ach">External accounts</button>
+    <button role="tab" id="t-wire" aria-controls="p-wire" data-tab="wire">Wire</button>
+    <button role="tab" id="t-bills" aria-controls="p-bills" data-tab="bills">Bill pay</button>
+    <button role="tab" id="t-limits" aria-controls="p-limits" data-tab="limits">Limits</button>
+  </div>
+
+  <!-- transfers between your accounts -->
+  <section class="mm-panel" role="tabpanel" id="p-transfer" aria-labelledby="t-transfer" hidden>
+    <div class="mm-grid">
+      <form class="mm-card" id="f-transfer" novalidate>
+        <h2>Move money between your accounts</h2>
+        <label>From<select name="fromAccountId" data-accts="canMove" required></select></label>
+        <label>To<select name="toAccountId" data-accts="canReceive" required></select></label>
+        <p class="sub" id="child-note" hidden>Your child's money stays theirs: it can only move to another of their accounts that you manage.</p>
+        <label>Amount<span class="mm-amt"><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" required></span></label>
+        <fieldset class="mm-when"><legend>When</legend>
+          <label><input type="radio" name="when" value="now" checked> Now</label>
+          <label><input type="radio" name="when" value="date"> On a date</label>
+          <label><input type="radio" name="when" value="weekly"> Weekly</label>
+          <label><input type="radio" name="when" value="monthly"> Monthly</label>
+        </fieldset>
+        <label class="mm-date" hidden>Date<input type="date" name="date"></label>
+        <label>Memo (optional)<input name="memo" maxlength="140" autocomplete="off"></label>
+        <p class="mm-left" data-left="internal"></p>
+        <p class="mm-msg" role="status"></p>
+        <button class="btn pri">Transfer</button>
+      </form>
+      <div class="mm-card">
+        <h2>Scheduled and recurring</h2>
+        <ul class="mm-list" id="schedules"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- USA Pay -->
+  <section class="mm-panel" role="tabpanel" id="p-p2p" aria-labelledby="t-p2p" hidden>
+    <p class="mm-warn" id="p2p-warn" role="note"></p>
+    <div class="mm-grid">
+      <div class="mm-card">
+        <div class="mm-seg" role="group" aria-label="USA Pay">
+          <button type="button" data-p2p="send" aria-pressed="true">Send</button>
+          <button type="button" data-p2p="request" aria-pressed="false">Request</button>
+          <button type="button" data-p2p="split" aria-pressed="false">Split a bill</button>
+        </div>
+        <form id="f-send" novalidate>
+          <h2>Send with USA Pay</h2>
+          <label>To (email or US mobile)<input name="to" autocomplete="off" placeholder="name@example.com or (202) 555-0117" required></label>
+          <label>From<select name="fromAccountId" data-accts="canSend"></select></label>
+          <label>Amount<span class="mm-amt"><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00"></span></label>
+          <label>Memo (optional)<input name="memo" maxlength="140" autocomplete="off"></label>
+          <p class="mm-left" data-left="p2p"></p>
+          <p class="mm-msg" role="status"></p>
+          <button class="btn pri">Send</button>
+        </form>
+        <form id="f-request" novalidate hidden>
+          <h2>Request money</h2>
+          <label>From (email or US mobile)<input name="from" autocomplete="off"></label>
+          <label>Deposit to<select name="toAccountId" data-accts="canSend"></select></label>
+          <label>Amount<span class="mm-amt"><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00"></span></label>
+          <label>Memo (optional)<input name="memo" maxlength="140" autocomplete="off"></label>
+          <p class="mm-msg" role="status"></p>
+          <button class="btn pri">Request</button>
+        </form>
+        <form id="f-split" novalidate hidden>
+          <h2>Split a bill</h2>
+          <label>Total<span class="mm-amt"><input name="total" inputmode="decimal" autocomplete="off" placeholder="0.00"></span></label>
+          <label>People (one email or mobile per line)<textarea name="people" rows="3"></textarea></label>
+          <label class="mm-check"><input type="checkbox" name="includeMe" checked> Include my share</label>
+          <label>Deposit to<select name="toAccountId" data-accts="canSend"></select></label>
+          <label>Memo (optional)<input name="memo" maxlength="140" autocomplete="off"></label>
+          <p class="mm-msg" role="status"></p>
+          <button class="btn pri">Send requests</button>
+        </form>
+      </div>
+      <div class="mm-card">
+        <h2>Requests for you</h2>
+        <ul class="mm-list" id="req-in"></ul>
+        <h2>Your requests</h2>
+        <ul class="mm-list" id="req-out"></ul>
+        <h2>Enrolled with USA Pay</h2>
+        <ul class="mm-list" id="enrolled"></ul>
+        <form id="f-enroll" class="mm-inline" novalidate>
+          <label>Add an email or mobile<input name="token" autocomplete="off"></label>
+          <label>Deposit to<select name="accountId" data-accts="canSend"></select></label>
+          <p class="mm-msg" role="status"></p>
+          <button class="btn">Send me a code</button>
+        </form>
+        <form id="f-enroll-code" class="mm-inline" novalidate hidden>
+          <p class="sub" id="enroll-sent"></p>
+          <label>6-digit code<input name="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label>
+          <p class="demo-code" id="enroll-demo" hidden></p>
+          <p class="mm-msg" role="status"></p>
+          <button class="btn pri">Confirm and enroll</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- external accounts and ACH -->
+  <section class="mm-panel" role="tabpanel" id="p-ach" aria-labelledby="t-ach" hidden>
+    <div class="mm-grid">
+      <form class="mm-card" id="f-ach" novalidate>
+        <h2>Move money with another bank</h2>
+        <fieldset class="mm-when"><legend>Direction</legend>
+          <label><input type="radio" name="direction" value="out" checked> Send to another bank</label>
+          <label><input type="radio" name="direction" value="in"> Bring money in</label>
+        </fieldset>
+        <label>USA Banc account<select name="accountId" data-accts="canSend"></select></label>
+        <label>Other bank account<select name="externalAccountId" id="ext-pick"></select></label>
+        <label>Amount<span class="mm-amt"><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00"></span></label>
+        <p class="mm-hint" id="ach-when"></p>
+        <p class="mm-left" data-left="ach"></p>
+        <p class="mm-msg" role="status"></p>
+        <button class="btn pri">Start transfer</button>
+      </form>
+      <div class="mm-card">
+        <h2>Your other bank accounts</h2>
+        <ul class="mm-list" id="externals"></ul>
+        <h2>Link an account</h2>
+        <div class="mm-seg" role="group" aria-label="How to link">
+          <button type="button" data-link="instant" aria-pressed="true">Instant</button>
+          <button type="button" data-link="deposits" aria-pressed="false">Two small deposits</button>
+        </div>
+        <form id="f-instant" novalidate>
+          <p class="mm-hint">Sign in to your other bank and we'll confirm the account right away. <b>Simulated:</b> no real bank is contacted.</p>
+          <label>Your other bank<select name="bank" id="instant-bank"></select></label>
+          <label>Type<select name="kind"><option value="checking">Checking</option><option value="savings">Savings</option></select></label>
+          <label>Online banking username<input name="username" autocomplete="off"></label>
+          <label>Password<input name="password" type="password" autocomplete="off"></label>
+          <p class="mm-hint" id="instant-demo"></p>
+          <p class="mm-msg" role="status"></p>
+          <button class="btn">Sign in and link</button>
+        </form>
+        <form id="f-link" novalidate hidden>
+          <label>Nickname<input name="nickname" maxlength="40" autocomplete="off" placeholder="My credit union"></label>
+          <label>Type<select name="kind"><option value="checking">Checking</option><option value="savings">Savings</option></select></label>
+          <label>Routing number<input name="routing" inputmode="numeric" maxlength="9" autocomplete="off"></label>
+          <label>Account number<input name="accountNumber" inputmode="numeric" maxlength="17" autocomplete="off"></label>
+          <p class="mm-hint">We'll make two small deposits (under $1) to confirm it's yours. Enter both amounts within 15 days; you get 3 tries.</p>
+          <p class="mm-msg" role="status"></p>
+          <button class="btn">Link with deposits</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- wires -->
+  <section class="mm-panel" role="tabpanel" id="p-wire" aria-labelledby="t-wire" hidden>
+    <div class="mm-grid">
+      <form class="mm-card" id="f-wire" novalidate>
+        <h2>Send a domestic wire</h2>
+        <label>From<select name="fromAccountId" data-accts="canSend"></select></label>
+        <label>Recipient's name<input name="recipientName" maxlength="80" autocomplete="off"></label>
+        <label>Recipient's bank<input name="bankName" maxlength="80" autocomplete="off"></label>
+        <label>Routing number<input name="routing" inputmode="numeric" maxlength="9" autocomplete="off"></label>
+        <label>Account number<input name="accountNumber" inputmode="numeric" maxlength="17" autocomplete="off"></label>
+        <label>Amount<span class="mm-amt"><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00"></span></label>
+        <label>Memo (optional)<input name="memo" maxlength="140" autocomplete="off"></label>
+        <p class="mm-left" data-left="wire"></p>
+        <p class="mm-msg" role="status"></p>
+        <button class="btn pri" id="wire-review">Review wire</button>
+        <div class="mm-review" id="wire-quote" hidden>
+          <dl id="wire-dl"></dl>
+          <p class="mm-irrev" id="wire-warn" role="alert"></p>
+          <label class="mm-check"><input type="checkbox" id="wire-ok"> I understand this wire is irrevocable: it can't be canceled or recalled once sent.</label>
+          <div class="mm-row"><button type="button" class="btn" id="wire-back">Edit</button><button type="button" class="btn pri" id="wire-send" disabled>Send wire</button></div>
+        </div>
+      </form>
+      <div class="mm-card">
+        <h2>About wires</h2>
+        <ul class="mm-facts" id="wire-facts"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- bill pay -->
+  <section class="mm-panel" role="tabpanel" id="p-bills" aria-labelledby="t-bills" hidden>
+    <div class="mm-grid">
+      <form class="mm-card" id="f-bill" novalidate>
+        <h2>Pay a bill</h2>
+        <label>Payee<select name="payeeId" id="payee-pick"></select></label>
+        <label>From<select name="fromAccountId" data-accts="canSend"></select></label>
+        <label>Amount<span class="mm-amt"><input name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00"></span></label>
+        <fieldset class="mm-when"><legend>When</legend>
+          <label><input type="radio" name="when" value="now" checked> Now</label>
+          <label><input type="radio" name="when" value="date"> On a date</label>
+          <label><input type="radio" name="when" value="weekly"> Weekly</label>
+          <label><input type="radio" name="when" value="monthly"> Monthly</label>
+        </fieldset>
+        <label class="mm-date" hidden>Date<input type="date" name="date"></label>
+        <p class="mm-hint" id="bill-eta"></p>
+        <p class="mm-left" data-left="billpay"></p>
+        <p class="mm-msg" role="status"></p>
+        <button class="btn pri">Pay</button>
+      </form>
+      <div class="mm-card">
+        <h2>Payees</h2>
+        <ul class="mm-list" id="payees"></ul>
+        <form id="f-payee" novalidate>
+          <h2>Add a payee</h2>
+          <label>Name<input name="name" maxlength="80" autocomplete="off"></label>
+          <label>Address<input name="address" maxlength="200" autocomplete="off"></label>
+          <label>or your account number at the biller<input name="accountNumber" inputmode="numeric" maxlength="17" autocomplete="off"></label>
+          <p class="mm-msg" role="status"></p>
+          <button class="btn">Add payee</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- limits -->
+  <section class="mm-panel" role="tabpanel" id="p-limits" aria-labelledby="t-limits" hidden>
+    <div class="mm-card">
+      <h2>Your limits</h2>
+      <p class="mm-hint">Daily limits reset at midnight Central Time. The 30-day limit counts the last 30 days. Money that comes back (returned, refunded or canceled) gives the room back. You can lower a limit any time; raising it back asks for a code.</p>
+      <div class="mm-tablewrap"><table class="mm-table" id="limits"></table></div>
+      <p class="mm-hint" id="stepup-rules"></p>
+      <form id="f-limit" class="mm-inline" novalidate>
+        <label>Limit<select name="rail" id="limit-rail"></select></label>
+        <label>Daily<span class="mm-amt"><input name="daily" inputmode="decimal" autocomplete="off"></span></label>
+        <label>30-day<span class="mm-amt"><input name="monthly" inputmode="decimal" autocomplete="off"></span></label>
+        <p class="mm-msg" role="status"></p>
+        <button class="btn">Save limit</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="mm-card mm-activity" aria-labelledby="act-h">
+    <header><h2 id="act-h">Recent payments and transfers</h2><button type="button" class="btn sm" id="sim-all" hidden>Simulate settlement</button></header>
+    <p class="mm-hint mm-simnote" id="sim-note" hidden><b>Simulated:</b> ACH, wires and bill payments normally finish on the day shown. “Simulate settlement” finishes them now so you can see each step.</p>
+    <ul class="mm-acts" id="activity"><li class="sub">Loading…</li></ul>
+  </section>
+</div></main>
+<script type="module">
+import { api, shell, money, esc, newKey } from '/assets/client.js';
+shell('/app/pay');
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const RAIL = { internal: 'Transfer', ach: 'ACH', p2p: 'USA Pay', wire: 'Wire', billpay: 'Bill pay' };
+const STATUS = { completed: 'Done', pending: 'Pending', processing: 'Processing', scheduled: 'Scheduled', settled: 'Settled', returned: 'Returned', sent: 'Sent', paid: 'Paid',
+  expired: 'Refunded', canceled: 'Canceled', failed: 'Failed' };
+const CAD = { once: 'Once', weekly: 'Weekly', monthly: 'Monthly' };
+let S = null;
+
+// one idempotency key per attempt: a retry of the same form re-sends the same key; a success starts a new one
+const keyFor = f => (f.dataset.key ??= newKey());
+const fresh = f => { delete f.dataset.key; };
+const vals = f => Object.fromEntries(new FormData(f));
+const say = (f, msg, ok = true) => { const m = f.querySelector('.mm-msg'); m.textContent = msg; m.className = 'mm-msg ' + (ok ? 'ok' : 'bad'); };
+async function submit(f, fn) {
+  const b = f.querySelector('button:not([type=button])'); if (b) b.disabled = true;
+  say(f, '');
+  try { const msg = await fn(); fresh(f); if (msg) say(f, msg); await load(); }
+  catch (e) { if (e.code !== 'cancelled') say(f, e.message, false); }
+  finally { if (b) b.disabled = false; }
+}
+
+// ---------- tabs ----------
+function show(tab) {
+  if (!$('#t-' + tab)) tab = 'transfer';
+  for (const b of $$('[role=tab]')) { const on = b.dataset.tab === tab; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; $('#' + b.getAttribute('aria-controls')).hidden = !on; }
+}
+$('.mm-tabs').addEventListener('click', e => { const b = e.target.closest('[role=tab]'); if (b) { history.replaceState(null, '', '#' + b.dataset.tab); show(b.dataset.tab); } });
+$('.mm-tabs').addEventListener('keydown', e => {
+  const tabs = $$('[role=tab]'), i = tabs.indexOf(document.activeElement); if (i < 0 || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+  const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); n.click();
+});
+show(location.hash.slice(1));
+addEventListener('hashchange', () => show(location.hash.slice(1)));
+
+for (const f of $$('form')) f.querySelectorAll('input[name=when]').forEach(r => r.addEventListener('change', () => {
+  f.querySelector('.mm-date').hidden = vals(f).when === 'now';
+  if (f.id === 'f-bill') eta();
+}));
+
+// ---------- render ----------
+const opt = a => `<option value="${esc(a.id)}">${esc(a.name)} ··${esc(a.last4)} (${money(a.kind === 'credit_card' ? '-' + a.owed : a.balance)})</option>`;
+const left = l => `You can send <b>${money(l.remaining)}</b> more today · ${money(l.leftMonth)} left in 30 days${l.perTransfer ? ` · up to ${money(l.perTransfer)} per transfer` : ''}`;
+const fmtDate = d => (d ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
+
+function render() {
+  for (const s of $$('select[data-accts]')) {
+    const keep = s.value, list = S.accounts.filter(a => a[s.dataset.accts]);
+    s.innerHTML = list.map(opt).join('') || '<option value="">No eligible accounts</option>';
+    if (list.some(a => a.id === keep)) s.value = keep;
+  }
+  const to = $('#f-transfer [name=toAccountId]'), from = $('#f-transfer [name=fromAccountId]');
+  // money in a child's account can only go to another of that child's accounts you manage (the server enforces it too)
+  const fromAcct = S.accounts.find(a => a.id === from.value), child = fromAcct?.childId;
+  for (const o of to.options) o.hidden = o.disabled = !!child && S.accounts.find(a => a.id === o.value)?.childId !== child;
+  const i = [...to.options].findIndex(o => o.value !== from.value && !o.disabled);
+  if (to.value === from.value || to.selectedOptions[0]?.disabled) { if (i >= 0) to.selectedIndex = i; }
+  // a child with no other account you manage: nothing to pick, so say why instead of sending a hidden choice
+  const stuck = !!child && i < 0, kid = esc(fromAcct?.childName?.split(' ')[0] ?? 'your child');
+  $('#child-note').innerHTML = !child ? '' : stuck
+    ? `${kid} has no other account you manage, so money in ${esc(fromAcct.name)} ··${esc(fromAcct.last4)} can't move yet. It can only go to another of ${kid}'s accounts: <a href="/app/open">open Custodial Savings for ${kid}</a> first.`
+    : `${kid}'s money stays theirs: it can only move to another of ${kid}'s accounts that you manage.`;
+  $('#child-note').hidden = !child;
+  $('#f-transfer button[type=submit], #f-transfer button:not([type])').disabled = stuck;
+  for (const p of $$('[data-left]')) { const l = S.limits.find(x => x.rail === p.dataset.left); p.innerHTML = l ? left(l) : ''; }
+  const minor = S.accounts.length && !S.accounts.some(a => a.canMove);
+  $('#minor').hidden = !minor;
+  $('#minor').textContent = minor ? "Teens can't move money out of their account in the app yet. Ask your parent or guardian to move it for you." : '';
+  const today = S.today;
+  for (const d of $$('input[type=date]')) d.min = today;
+
+  $('#schedules').innerHTML = S.schedules.map(s => `<li><div><b>${money(s.amount)}</b> ${esc(s.rail === 'billpay' ? 'to' : '→')} ${esc(s.to)}
+      <div class="sub">${esc(CAD[s.cadence])} · next ${fmtDate(s.nextRun)} · from ${esc(s.from)}</div></div>
+      <button class="btn sm" data-cancel="${esc(s.id)}">Cancel</button></li>`).join('') || '<li class="sub">Nothing scheduled.</li>';
+
+  $('#p2p-warn').textContent = S.p2p.warning;
+  const pay = S.accounts.filter(a => a.canSend).map(opt).join('');
+  $('#req-in').innerHTML = S.p2p.requestsIn.map(r => `<li><div><b>${esc(r.from)}</b> asked for <b>${money(r.amount)}</b>${r.memo ? ` · ${esc(r.memo)}` : ''}
+      <select aria-label="Pay from" data-from="${esc(r.id)}">${pay}</select></div>
+      <span class="mm-row"><button class="btn sm pri" data-pay="${esc(r.id)}">Pay</button><button class="btn sm" data-decline="${esc(r.id)}">Decline</button></span></li>`).join('') || '<li class="sub">No requests.</li>';
+  $('#req-out').innerHTML = S.p2p.requestsOut.map(r => `<li><div>${money(r.amount)} from ${esc(r.to)}${r.memo ? ` · ${esc(r.memo)}` : ''}</div><span class="mm-pill ${esc(r.status)}">${esc(r.status)}</span></li>`).join('') || '<li class="sub">None yet.</li>';
+  $('#enrolled').innerHTML = S.p2p.enrollments.map(e => { const a = S.accounts.find(x => x.id === e.accountId); return `<li><div>${esc(e.token)}<div class="sub">${e.verified ? `to ${a ? esc(a.name + ' ··' + a.last4) : 'your account'}` : 'Not confirmed yet: enroll it again to get a code. Payments wait until you do.'}</div></div></li>`; }).join('') || '<li class="sub">Not enrolled yet.</li>';
+
+  const verified = S.externalAccounts.filter(e => e.status === 'verified');
+  $('#ext-pick').innerHTML = verified.map(e => `<option value="${esc(e.id)}">${esc(e.nickname)} ··${esc(e.last4)}${e.onHold ? ' (on hold)' : ''}</option>`).join('') || '<option value="">Link and verify an account first</option>';
+  $('#externals').innerHTML = S.externalAccounts.map(e => `<li class="mm-ext"><div><b>${esc(e.nickname)} ··${esc(e.last4)}</b>
+      <div class="sub">${esc(e.kind)} · routing ${esc(e.routing)} · ${e.method === 'instant' ? 'linked instantly · ' : ''}${e.status === 'pending' ? `waiting for you to confirm the deposits (by ${fmtDate(e.removeBy)}, ${e.triesLeft} ${e.triesLeft === 1 ? 'try' : 'tries'} left)`
+        : e.onHold ? `verified · new-account hold: you can send to it from ${new Date(e.holdUntil).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'verified'}</div>
+      ${e.status === 'pending' ? `<form class="mm-verify" data-verify="${esc(e.id)}" novalidate><label>First deposit<span class="mm-amt"><input name="amount1" inputmode="decimal" placeholder="0.00" autocomplete="off"></span></label>
+        <label>Second deposit<span class="mm-amt"><input name="amount2" inputmode="decimal" placeholder="0.00" autocomplete="off"></span></label><button class="btn sm pri">Confirm</button><p class="mm-msg" role="status"></p></form>` : ''}</div>
+      <button class="btn sm" data-unlink="${esc(e.id)}">Remove</button></li>`).join('') || '<li class="sub">No accounts linked.</li>';
+  const bank = $('#instant-bank'), kb = bank.value;
+  bank.innerHTML = S.ach.instantBanks.map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+  if (kb) bank.value = kb;
+  $('#instant-demo').innerHTML = S.ach.instantDemo ? `Simulated sign-in: username <b>${esc(S.ach.instantDemo.username)}</b>, password <b>${esc(S.ach.instantDemo.password)}</b>.` : '';
+  $('#ach-when').textContent = `Cut-off ${S.ach.cutoff}. Starting now, it's processed ${fmtDate(S.ach.processOn)}; sending out arrives in 1 business day, bringing money in takes 3. Weekends and federal holidays don't count.`;
+
+  $('#wire-facts').innerHTML = [`Fee: ${money(S.wire.fee)} per domestic wire.`, `Cut-off: ${S.wire.cutoff}. After that, wires go the next business day.`,
+    `If you send now, it goes ${fmtDate(S.wire.sendsOn)}.`, 'Domestic (US) wires only.', S.wire.warning].map(x => `<li>${esc(x)}</li>`).join('');
+
+  $('#payee-pick').innerHTML = S.payees.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('') || '<option value="">Add a payee first</option>';
+  $('#payees').innerHTML = S.payees.map(p => `<li><div><b>${esc(p.name)}</b><div class="sub">${esc(p.address ?? '')}${p.accountLast4 ? `${p.address ? ' · ' : ''}account ··${esc(p.accountLast4)}` : ''}</div></div>
+      <button class="btn sm" data-unpayee="${esc(p.id)}">Remove</button></li>`).join('') || '<li class="sub">No payees yet.</li>';
+
+  $('#limits').innerHTML = `<thead><tr><th>Limit</th><th>Daily</th><th>30-day</th><th>Left today</th><th>Left in 30 days</th></tr></thead><tbody>` +
+    S.limits.map(l => `<tr data-rail="${esc(l.rail)}"><td>${esc(l.name)}${l.perTransfer ? `<div class="sub">${money(l.perTransfer)} per transfer</div>` : ''}<div class="sub">used today ${money(l.usedToday)}</div></td><td>${money(l.daily)}</td><td>${money(l.monthly)}</td>
+      <td class="left"><b>${money(l.leftToday)}</b></td><td>${money(l.leftMonth)}</td></tr>`).join('') + '</tbody>';
+  const codeFrom = r => S.limits.find(l => l.rail === r)?.stepUpFrom;
+  $('#stepup-rules').textContent = `For your security we ask for a one-time code for every wire, USA Pay payment, bill payment and transfer to another bank, for bringing in ${money(codeFrom('ach'))} or more from another bank, for ${money(codeFrom('internal'))} or more between your own accounts, and when you add a payee or an account.`;
+  const rail = $('#limit-rail'), keep = rail.value;
+  rail.innerHTML = S.limits.map(l => `<option value="${esc(l.rail)}">${esc(l.name)}</option>`).join('');
+  if (keep) rail.value = keep;
+  fillLimit();
+
+  $('#activity').innerHTML = S.activity.length ? S.activity.map(t => {
+    const out = t.direction === 'out', what = t.rail === 'internal' ? `Transfer to ${t.counterparty}` : t.incoming ? `USA Pay from ${t.counterparty ?? ''}`
+      : `${RAIL[t.rail]} ${out ? 'to' : 'from'} ${t.counterparty ?? ''}`;
+    const when = t.status === 'pending' && t.rail === 'p2p' ? `waiting until ${fmtDate(t.settlesOn)}` : t.rail === 'ach' && ['pending', 'processing'].includes(t.status) ? `settles ${fmtDate(t.settlesOn)}`
+      : t.rail === 'billpay' && t.status === 'sent' ? `deliver by ${fmtDate(t.settlesOn)}` : t.status === 'scheduled' ? `sends ${fmtDate(t.processOn)}` : '';
+    const meta = [new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), when, t.fee !== '0.00' ? `fee ${money(t.fee)}` : '', t.note ?? '',
+      t.simulated ? 'finished with Simulate settlement' : ''].filter(Boolean).map(esc).join(' · ');
+    const acts = (t.canCancel ? `<button class="btn sm" data-xcancel="${esc(t.id)}">Cancel</button>` : '') + (t.canSimulate ? `<button class="btn sm ghost" data-sim="${esc(t.id)}">Simulate settlement</button>` : '');
+    return `<li data-id="${esc(t.id)}"><div class="d">${esc(what)}</div><div class="a ${out ? '' : 'pos'}">${out ? (t.rail === 'internal' ? '' : '-') : '+'}${money(t.amount)}</div>
+      <div class="m"><span class="mm-pill ${esc(t.status)}">${esc(STATUS[t.status] ?? t.status)}${t.returnCode ? ' ' + esc(t.returnCode) : ''}</span>${meta ? `<span>${meta}</span>` : ''}</div>
+      ${acts ? `<div class="mm-row x">${acts}</div>` : ''}</li>`;
+  }).join('') : '<li class="sub">No payments or transfers yet.</li>';
+  const sims = S.activity.filter(t => t.canSimulate).length;
+  $('#sim-all').hidden = $('#sim-note').hidden = !sims;
+  $('#sim-all').textContent = sims > 1 ? `Simulate settlement (${sims})` : 'Simulate settlement';
+}
+function fillLimit() {
+  const l = S.limits.find(x => x.rail === $('#limit-rail').value); if (!l) return;
+  $('#f-limit [name=daily]').value = l.daily; $('#f-limit [name=monthly]').value = l.monthly;
+}
+$('#limit-rail').addEventListener('change', fillLimit);
+
+async function load() {
+  try { S = await api('GET', '/api/pay'); $('#err').textContent = ''; render(); }
+  catch (e) { $('#err').textContent = e.message; }
+}
+
+// ---------- actions ----------
+$('#f-transfer').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  if (f.toAccountId.selectedOptions[0]?.disabled || !f.toAccountId.value || f.toAccountId.value === f.fromAccountId.value) throw new Error($('#child-note').textContent || 'Choose an account to move the money to.');
+  const v = vals(f), r = await api('POST', '/api/pay/transfers', { ...v, idempotencyKey: keyFor(f) });
+  f.amount.value = '';
+  return r.schedule ? `Scheduled: ${money(v.amount)} ${CAD[r.schedule.cadence].toLowerCase()}, next on ${fmtDate(r.schedule.nextRun)}.` : `Done. ${money(r.transfer.amount)} moved to ${r.transfer.counterparty}.`;
+}); };
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button[data-cancel], button[data-pay], button[data-decline], button[data-unlink], button[data-unpayee], button[data-xcancel], button[data-sim], #sim-all'); if (!b) return;
+  e.preventDefault(); b.disabled = true;
+  try {
+    if (b.dataset.cancel) await api('DELETE', `/api/pay/schedules/${b.dataset.cancel}`);
+    if (b.dataset.pay) await api('POST', `/api/pay/p2p/requests/${b.dataset.pay}/pay`, { fromAccountId: $(`select[data-from="${b.dataset.pay}"]`).value, idempotencyKey: (b.dataset.key ??= newKey()) });
+    if (b.dataset.decline) await api('POST', `/api/pay/p2p/requests/${b.dataset.decline}/decline`);
+    if (b.dataset.unlink) await api('DELETE', `/api/pay/external-accounts/${b.dataset.unlink}`);
+    if (b.dataset.unpayee) await api('DELETE', `/api/pay/payees/${b.dataset.unpayee}`);
+    if (b.dataset.xcancel && confirm('Cancel this transfer? The money goes back to your account.')) await api('DELETE', `/api/pay/transfers/${b.dataset.xcancel}`);
+    if (b.dataset.sim || b.id === 'sim-all') await api('POST', '/api/pay/simulate-settlement', b.dataset.sim ? { transferId: b.dataset.sim } : {});
+    await load();
+  } catch (err) { if (err.code !== 'cancelled') $('#err').textContent = err.message; b.disabled = false; }
+});
+
+for (const b of $$('[data-p2p]')) b.onclick = () => {
+  for (const x of $$('[data-p2p]')) x.setAttribute('aria-pressed', String(x === b));
+  for (const m of ['send', 'request', 'split']) $('#f-' + m).hidden = m !== b.dataset.p2p;
+};
+$('#f-send').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const r = await api('POST', '/api/pay/p2p/send', { ...vals(f), idempotencyKey: keyFor(f) });
+  f.amount.value = ''; f.memo.value = '';
+  return r.transfer.status === 'pending' ? `${money(r.transfer.amount)} is waiting for ${r.transfer.counterparty} to enroll in USA Pay. If they don't by ${fmtDate(r.transfer.settlesOn)}, it comes back to you.`
+    : `Sent ${money(r.transfer.amount)} to ${r.transfer.counterparty}.`;
+}); };
+$('#f-request').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const r = await api('POST', '/api/pay/p2p/request', vals(f)); f.amount.value = '';
+  return `Requested ${money(r.request.amount)} from ${r.request.to}.`;
+}); };
+$('#f-split').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const v = vals(f), r = await api('POST', '/api/pay/p2p/split', { total: v.total, people: v.people.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean), includeMe: f.includeMe.checked, toAccountId: v.toAccountId, memo: v.memo });
+  return `Sent ${r.requests.length} ${r.requests.length === 1 ? 'request' : 'requests'}: ${r.requests.map(x => `${money(x.amount)} from ${x.to}`).join(', ')}. Your share: ${money(r.yourShare)}.`;
+}); };
+// Enrolling proves the email or phone: a code goes to it (simulated: shown here), and only the right code enrolls it.
+const enrolledMsg = r => `${r.token} is enrolled.${r.released ? ` ${r.released} waiting ${r.released === 1 ? 'payment' : 'payments'} arrived.` : ''}`;
+$('#f-enroll').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const r = await api('POST', '/api/pay/p2p/enroll', vals(f));
+  if (r.enrolled) { f.token.value = ''; return enrolledMsg(r); }
+  const c = $('#f-enroll-code'); c.dataset.verification = r.verificationId; c.hidden = false; c.code.value = '';
+  $('#enroll-sent').textContent = r.note;
+  $('#enroll-demo').hidden = !r.demoCode;
+  $('#enroll-demo').innerHTML = r.demoCode ? `Simulated ${r.token.includes('@') ? 'email' : 'text message'} to ${esc(r.token)}: your USA Pay code is <b>${esc(r.demoCode)}</b>` : '';
+  c.code.focus();
+  return '';
+}); };
+$('#f-enroll-code').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const r = await api('POST', '/api/pay/p2p/enroll/verify', { verificationId: f.dataset.verification, code: f.code.value.trim() });
+  f.hidden = true; $('#f-enroll').token.value = ''; say($('#f-enroll'), enrolledMsg(r));
+  return '';
+}); };
+$('#f-transfer [name=fromAccountId]').addEventListener('change', render);
+
+$('#f-ach').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const r = await api('POST', '/api/pay/ach', { ...vals(f), idempotencyKey: keyFor(f) }); f.amount.value = '';
+  return `Started: ${money(r.transfer.amount)} ${r.transfer.direction === 'out' ? 'to' : 'from'} ${r.transfer.counterparty}. Expected to settle ${fmtDate(r.transfer.settlesOn)}.`;
+}); };
+for (const b of $$('[data-link]')) b.onclick = () => {
+  for (const x of $$('[data-link]')) x.setAttribute('aria-pressed', String(x === b));
+  $('#f-instant').hidden = b.dataset.link !== 'instant'; $('#f-link').hidden = b.dataset.link === 'instant';
+};
+$('#f-instant').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const r = await api('POST', '/api/pay/external-accounts/instant', vals(f)); f.username.value = ''; f.password.value = '';
+  return `Linked and verified: ${r.externalAccount.nickname} ··${r.externalAccount.last4}. You can bring money in now; sending to it opens after the ${S.ach.holdDays}-day new-account hold.`;
+}); };
+$('#f-link').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const r = await api('POST', '/api/pay/external-accounts', vals(f)); f.reset();
+  return `Linked ··${r.externalAccount.last4}. We made two small deposits to it.` + (r.demoMicroDeposits ? ` Simulated: they were ${r.demoMicroDeposits.map(money).join(' and ')}.` : '');
+}); };
+document.addEventListener('submit', e => {
+  const f = e.target.closest('form[data-verify]'); if (!f) return;
+  e.preventDefault(); submit(f, async () => { await api('POST', `/api/pay/external-accounts/${f.dataset.verify}/verify`, vals(f)); });
+});
+
+// wires: review (fee, send date, irrevocable warning) -> tick the box -> send
+const wf = $('#f-wire');
+wf.onsubmit = e => { e.preventDefault(); submit(wf, async () => {
+  const v = vals(wf), q = (await api('POST', '/api/pay/wires/quote', { fromAccountId: v.fromAccountId, amount: v.amount })).quote;
+  $('#wire-dl').innerHTML = [['To', `${v.recipientName} at ${v.bankName}`], ['Amount', money(q.amount)], ['Wire fee', money(q.fee)], ['Total', money(q.total)],
+    ['Sends', fmtDate(q.sendsOn) + (q.afterCutoff ? ` (after the ${q.cutoff} cut-off, so the next business day)` : '')]].map(([k, x]) => `<dt>${esc(k)}</dt><dd>${esc(x)}</dd>`).join('');
+  $('#wire-warn').textContent = q.warning;
+  $('#wire-ok').checked = false; $('#wire-send').disabled = true;
+  $('#wire-quote').hidden = false; $('#wire-review').hidden = true;
+  for (const i of wf.querySelectorAll('input:not(#wire-ok), select')) i.disabled = true;
+}); };
+const wireEdit = () => { $('#wire-quote').hidden = true; $('#wire-review').hidden = false; for (const i of wf.querySelectorAll('input, select')) i.disabled = false; };
+$('#wire-back').onclick = wireEdit;
+$('#wire-ok').onchange = () => { $('#wire-send').disabled = !$('#wire-ok').checked; };
+$('#wire-send').onclick = async () => {
+  for (const i of wf.querySelectorAll('input, select')) i.disabled = false;
+  const v = vals(wf); wireEdit();
+  await submit(wf, async () => {
+    const r = await api('POST', '/api/pay/wires', { ...v, confirmIrrevocable: $('#wire-ok').checked, idempotencyKey: keyFor($('#wire-send')) });
+    fresh($('#wire-send')); wf.reset();
+    return r.transfer.status === 'sent' ? `Wire sent: ${money(r.transfer.amount)} plus a ${money(r.transfer.fee)} fee.` : `Wire scheduled for ${fmtDate(r.transfer.processOn)}: ${money(r.transfer.amount)} plus a ${money(r.transfer.fee)} fee.`;
+  });
+};
+
+async function eta() {
+  const f = $('#f-bill'), v = vals(f);
+  if (v.when !== 'now' && !v.date) { $('#bill-eta').textContent = 'Choose a date to see when it arrives.'; return; }
+  try { const r = await api('POST', '/api/pay/bills/estimate', v.when === 'now' ? {} : { date: v.date }); $('#bill-eta').textContent = `Sent electronically ${fmtDate(r.sendOn)}; expected to arrive by ${fmtDate(r.deliverBy)}.`; }
+  catch { $('#bill-eta').textContent = ''; }
+}
+$('#f-bill [name=date]').addEventListener('change', eta);
+$('#f-bill').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const v = vals(f), r = await api('POST', '/api/pay/bills', { ...v, idempotencyKey: keyFor(f) }); f.amount.value = '';
+  return r.schedule ? `Scheduled ${CAD[r.schedule.cadence].toLowerCase()}: next on ${fmtDate(r.schedule.nextRun)}, arriving by ${fmtDate(r.schedule.deliverBy)}.`
+    : `Paid ${money(r.transfer.amount)} to ${r.transfer.counterparty}. Expected to arrive by ${fmtDate(r.transfer.settlesOn)}.`;
+}); };
+$('#f-payee').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const r = await api('POST', '/api/pay/payees', vals(f)); f.reset(); return `Added ${r.payee.name}.`;
+}); };
+$('#f-limit').onsubmit = e => { e.preventDefault(); const f = e.target; submit(f, async () => {
+  const v = vals(f), r = await api('PUT', `/api/pay/limits/${v.rail}`, { daily: v.daily, monthly: v.monthly });
+  return `Saved. ${r.limit.name}: ${money(r.limit.daily)} a day, ${money(r.limit.monthly)} per 30 days.`;
+}); };
+
+await load();
+eta();
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your cards | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+<link rel="stylesheet" href="/assets/cards.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="sv-h"><div><h1>Your cards</h1><p>Lock a card, set controls and limits, pay your credit card and see statements.</p></div>
+    <a class="btn pri sv-btn" id="apply" href="/app/cards-apply" hidden>Apply for a credit card</a></div>
+  <p class="err" id="err" role="alert"></p>
+  <div id="offers"></div>
+  <section class="c-sec" aria-labelledby="cc-h"><h2 id="cc-h">Credit cards</h2><div class="c-grid" id="credit"><p class="sv-muted">Loading your cards…</p></div></section>
+  <section class="c-sec" aria-labelledby="dc-h"><h2 id="dc-h">Debit cards</h2><div class="c-grid" id="debit"></div></section>
+  <p class="sv-note c-mt">Card numbers are shown as the last 4 digits only. <b>Simulated:</b> no real card network is involved, and every card number here is made up.</p>
+</div></main>
+<script type="module">
+import { api, shell, money, esc } from '/assets/client.js';
+import { cardArt, pill, STATUS } from '/assets/cards.js';
+import { day } from '/assets/servicing.js';
+shell('/app/cards');
+const $ = s => document.querySelector(s);
+
+const credit = a => `<a class="c-tile" href="/app/cards-detail?account=${esc(a.id)}" aria-label="${esc(a.name)} ending ${esc(a.last4)}: open">
+  ${cardArt({ kind: a.productKind, name: a.productName, last4: a.card?.last4 ?? a.last4, holder: a.card?.holder, exp: a.card?.exp, status: a.card?.status ?? 'active', small: true })}
+  <div class="row"><span>Current balance</span><b>${money(a.owed)}</b></div>
+  <div class="row"><span>Available credit</span><b>${money(a.available)}</b></div>
+  ${a.paymentDue ? `<div class="row"><span>Minimum due ${day(a.paymentDue)}</span><b>${money(a.minimumLeft)}</b></div>` : ''}
+</a>`;
+const debit = d => `<a class="c-tile" href="/app/cards-detail?card=${esc(d.id)}" aria-label="Debit card ending ${esc(d.last4)} on ${esc(d.account.name)}: open">
+  ${cardArt({ kind: 'debit', name: 'Debit', last4: d.last4, holder: d.holder, exp: d.exp, status: d.status, small: true })}
+  <div class="row"><span>${esc(d.account.name)} ··${esc(d.account.last4)}</span>${pill(d.status, STATUS[d.status])}</div>
+  <div class="row muted"><span>Card holder</span><span>${esc(d.holder)}</span></div>
+</a>`;
+
+try {
+  const r = await api('GET', '/api/cards');
+  $('#apply').hidden = !r.canApply;
+  $('#credit').innerHTML = r.credit.map(credit).join('') || `<p class="sv-muted">${r.canApply ? 'No credit cards yet. <a href="/app/cards-apply">See if you prequalify</a>.' : 'Credit cards are for customers 18 and older.'}</p>`;
+  $('#debit').innerHTML = r.debit.map(debit).join('') || '<p class="sv-muted">No debit cards.</p>';
+  $('#offers').innerHTML = r.openOffers.map(o => `<section class="sv-card decision counteroffer c-mt" aria-label="Offer waiting"><div class="sv-pad">
+    <h2>You have an offer waiting</h2><p>${esc(o.offer.productName)}${o.offer.creditLimit ? ` with a ${money(o.offer.creditLimit)} limit` : ''}. Accept by ${esc(o.offer.expiresOn)}.</p>
+    <p class="c-mt"><a href="/app/cards-apply?offer=${esc(o.id)}">Review the offer</a></p></div></section>`).join('');
+} catch (e) { $('#err').textContent = e.message; $('#credit').innerHTML = ''; }
+</script>
+</body>
+</html>

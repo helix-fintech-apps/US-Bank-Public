@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alerts | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=2" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="sv-h"><div><h1>Alerts</h1><p>We check your alerts whenever you open the app. Email delivery is simulated.</p></div></div>
+  <p class="err" id="err" role="alert"></p>
+  <div class="sv-grid">
+    <section class="sv-card" aria-labelledby="in-h">
+      <header><h2 id="in-h">Inbox <span class="sv-muted" id="unread-txt"></span></h2><button class="btn sv-btn sm ghost" id="allread">Mark all as read</button></header>
+      <ul class="sv-inbox" id="inbox"><li class="sv-empty">Loading…</li></ul>
+    </section>
+    <div>
+      <section class="sv-card" aria-labelledby="r-h">
+        <h2 id="r-h">Your alerts</h2>
+        <ul class="sv-rules" id="rules"></ul>
+      </section>
+      <form class="sv-card sv-pad" id="add" aria-labelledby="add-h">
+        <h3 id="add-h" style="font-size:16px;margin-bottom:12px">Add an alert</h3>
+        <div class="sv-form" style="grid-template-columns:1fr">
+          <label class="sv-fld"><span>Tell me about</span><select class="sv-in" id="a-kind"></select></label>
+          <label class="sv-fld" id="a-acct-w"><span>Account</span><select class="sv-in" id="a-acct"><option value="">All my accounts</option></select></label>
+          <label class="sv-fld" id="a-amt-w"><span id="a-amt-l">Amount ($)</span><input class="sv-in" id="a-amt" inputmode="decimal" placeholder="100.00"></label>
+          <label class="chk" style="color:var(--ink);margin:0"><input type="checkbox" id="a-email"> Also email me (simulated)</label>
+          <p class="sv-err" id="a-err" role="alert"></p>
+          <button class="btn pri sv-btn">Add alert</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div></main>
+<script type="module">
+import { api, shell, money, esc } from '/assets/client.js';
+import { subnav, unread, when } from '/assets/servicing.js';
+shell('/app/alerts'); subnav('/app/alerts');
+const $ = s => document.querySelector(s);
+let data, accounts = new Map();
+const THRESH = { low_balance: 'Balance falls under ($)', large_purchase: 'Purchase is more than ($)' };
+
+const item = n => `<li class="${n.read ? '' : 'unread'}" data-id="${esc(n.id)}"><span class="dot" aria-hidden="true"></span>
+  <div><div class="ti">${n.read ? '' : '<span class="skip">Unread: </span>'}${esc(n.title)}</div><div class="bd">${esc(n.body)}</div>
+  ${n.emailTo ? `<div class="em">Would be emailed to ${esc(n.emailTo)} (simulated, no email is sent)</div>` : ''}
+  ${n.read ? '' : '<button class="btn sv-btn sm ghost mark" style="margin-top:8px">Mark as read</button>'}</div>
+  <time datetime="${esc(n.createdAt)}">${esc(when(n.createdAt))}</time></li>`;
+const rule = r => {
+  const where = r.accountId ? accounts.get(r.accountId) : (r.kind === 'new_device' ? '' : 'All accounts');
+  return `<li data-id="${esc(r.id)}"><div class="sv-switch"><div class="t"><b>${esc(r.label)}${r.threshold ? ` · ${r.kind === 'low_balance' ? 'under' : 'over'} ${money(r.threshold)}` : ''}</b>
+    <span class="sv-muted">${esc(where ?? '')}${where ? ' · ' : ''}In app${r.email ? ` + email to ${esc(data.email ?? 'your email')} (simulated)` : ''}</span></div>
+    <button role="switch" class="on-off" aria-checked="${r.active}" aria-label="${esc(r.label)} on"></button></div>
+    <div class="sv-row"><button class="btn sv-btn sm ghost email">${r.email ? 'Stop emails' : 'Email me too'}</button><button class="btn sv-btn sm danger del">Remove</button></div></li>`;
+};
+
+async function load() {
+  try {
+    data = await api('GET', '/api/alerts');
+    accounts = new Map(data.accounts.map(a => [a.id, `${a.name} ··${a.last4}`]));
+    $('#inbox').innerHTML = data.items.map(item).join('') || '<li class="sv-empty">No alerts yet.</li>';
+    $('#rules').innerHTML = data.rules.map(rule).join('') || '<li class="sv-muted">No alerts set up.</li>';
+    $('#unread-txt').textContent = data.unread ? `· ${data.unread} unread` : '· all read';
+    $('#allread').disabled = !data.unread;
+    unread(data.unread);
+    if (!$('#a-kind').options.length) {
+      $('#a-kind').innerHTML = Object.entries(data.kinds).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('');
+      $('#a-acct').insertAdjacentHTML('beforeend', data.accounts.map(a => `<option value="${esc(a.id)}">${esc(a.name)} ··${esc(a.last4)}</option>`).join(''));
+      kindChanged();
+    }
+  } catch (e) { $('#err').textContent = e.message; }
+}
+function kindChanged() {
+  const k = $('#a-kind').value;
+  $('#a-amt-w').hidden = !THRESH[k]; $('#a-amt-l').textContent = THRESH[k] ?? '';
+  $('#a-acct-w').hidden = k === 'new_device';
+}
+const act = fn => async e => { $('#err').textContent = ''; try { await fn(e); await load(); } catch (err) { if (err.code !== 'cancelled') $('#err').textContent = err.message; } };
+
+$('#a-kind').addEventListener('change', kindChanged);
+$('#allread').onclick = act(() => api('POST', '/api/alerts/read', { all: true }));
+$('#inbox').addEventListener('click', e => { const b = e.target.closest('.mark'); if (b) act(() => api('POST', '/api/alerts/read', { ids: [b.closest('li').dataset.id] }))(); });
+$('#rules').addEventListener('click', e => {
+  const li = e.target.closest('li[data-id]'); if (!li) return;
+  const r = data.rules.find(x => x.id === li.dataset.id), path = `/api/alerts/rules/${encodeURIComponent(r.id)}`;
+  if (e.target.closest('.on-off')) act(() => api('PUT', path, { active: !r.active }))();
+  else if (e.target.closest('.email')) act(() => api('PUT', path, { email: !r.email }))();
+  else if (e.target.closest('.del')) act(() => api('DELETE', path, {}))();
+});
+$('#add').addEventListener('submit', async e => {
+  e.preventDefault(); $('#a-err').textContent = '';
+  const k = $('#a-kind').value;
+  try {
+    await api('POST', '/api/alerts/rules', { kind: k, accountId: $('#a-acct').value || undefined, threshold: THRESH[k] ? $('#a-amt').value.trim() : undefined, email: $('#a-email').checked });
+    $('#add').reset(); kindChanged(); await load();
+  } catch (err) { $('#a-err').textContent = err.message; }
+});
+load();
+</script>
+</body>
+</html>

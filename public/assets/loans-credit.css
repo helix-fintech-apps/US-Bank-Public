@@ -1,0 +1,64 @@
+/* Loans and credit score pages. Built on site.css + auth.css + servicing.css (sv-* cards, lists, tables, forms),
+   so they look like the other signed-in pages; only what those don't have lives here. */
+.lc-note { margin: 10px 0 4px; font-size: 14px; }
+.lc-back { display: inline-block; font-weight: 700; text-decoration: none; margin-bottom: 8px; font-size: 14px; }
+.lc-pill { display: inline-block; font-size: 12px; font-weight: 800; padding: 2px 9px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); white-space: nowrap; vertical-align: middle; }
+.lc-pill.ok { background: #e3f5ea; color: #157347; } .lc-pill.warn { background: #fff4d6; color: #7a5300; } .lc-pill.bad { background: #fde8e7; color: #b42318; }
+.sv-h .lc-pill { font-size: 13px; padding: 4px 12px; }
+.lc-bar { height: 8px; background: var(--brand-soft); border-radius: 999px; overflow: hidden; margin: 8px 0 4px; }
+.lc-bar i { display: block; height: 100%; background: var(--brand-2); border-radius: 999px; }
+.sv-list a.d { color: var(--ink); text-decoration: none; } .sv-list a.d:hover { color: var(--brand-2); text-decoration: underline; }
+.sv-list .a .sv-muted { font-weight: 400; }
+.lc-done summary { padding: 0 18px 12px; }
+.lc-offer-card { border-color: #9cc2f3; }
+.lc-acts { margin-top: 16px; }
+.lc-ok { margin-top: 10px; }
+.lc-lead { margin: 12px 0 6px; }
+.lc-tight { padding-bottom: 0; }
+.lc-form { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.lc-form small { font-size: 12px; }
+.lc-estimate { margin-top: 16px; font-size: 14px; line-height: 1.5; }
+.lc-steps { margin: 0; padding-left: 38px; display: grid; gap: 10px; font-size: 14px; }
+.lc-reasons { margin: 6px 0 12px; padding-left: 22px; display: grid; gap: 6px; }
+.lc-accept { display: grid; gap: 4px; max-width: 480px; margin-top: 12px; }
+.lc-decision.approved { border-top: 4px solid #157347; } .lc-decision.counteroffer { border-top: 4px solid #d29a00; } .lc-decision.declined { border-top: 4px solid #b42318; }
+.lc-tiles { border-top: 1px solid var(--line); }
+.lc-decision .lc-tiles { border-top: 0; }
+.lc-tiles.lc-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 0; }
+.lc-radio { border: 0; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.lc-radio label { display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; font-weight: 600; font-size: 14px; }
+.lc-radio label b { margin-left: auto; }
+.lc-radio input { accent-color: var(--brand-2); width: 18px; height: 18px; margin: 0; }
+.lc-radio label:has(input:checked) { border-color: var(--brand-2); background: var(--brand-soft); }
+.lc-scroll { overflow-x: auto; max-height: 440px; overflow-y: auto; }
+.lc-scroll .sv-tbl th { position: sticky; top: 0; background: #fff; }
+.sv-tbl tfoot td { font-weight: 800; border-top: 1px solid var(--line); }
+details.lc-orig > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 14px 18px; }
+details.lc-orig > summary::-webkit-details-marker { display: none; }
+details.lc-orig > summary h2 { font-size: 16px; color: var(--brand-2); }
+details.lc-orig > summary h2::before { content: "▸ "; } details.lc-orig[open] > summary h2::before { content: "▾ "; }
+details.lc-orig[open] > summary { border-bottom: 1px solid var(--line); }
+
+/* credit score */
+.cs-top { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 20px; align-items: stretch; }
+.cs-top .sv-card + .sv-card { margin-top: 0; }
+.cs-top + .sv-card { margin-top: 20px; }
+.cs-gauge { text-align: center; }
+.cs-gauge svg { width: 100%; max-width: 260px; height: auto; display: block; margin: 0 auto; }
+.cs-gauge .score { font-size: 44px; font-weight: 800; color: var(--brand); line-height: 1; margin-top: -60px; }
+.cs-gauge .band { font-weight: 700; color: var(--brand-2); margin: 6px 0 4px; }
+.cs-hist svg { width: 100%; height: auto; display: block; }
+.cs-factor .a.pos { color: #157347; } .cs-factor .a.neg { color: #b42318; }
+.cs-whatif { grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); align-items: start; }
+.chk.cs-miss { color: var(--ink); font-size: 15px; font-weight: 600; margin: 24px 0 0; }
+.chk.cs-miss input { accent-color: var(--brand-2); }
+.cs-result { font-size: 18px; font-weight: 800; min-height: 1px; }
+
+@media (max-width: 960px) { .cs-top { grid-template-columns: minmax(0, 1fr); } .cs-top .sv-card + .sv-card { margin-top: 20px; } }
+@media (max-width: 640px) {
+  .lc-tiles.lc-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sv-tbl th, .sv-tbl td { padding: 8px 8px; } .sv-tbl th:first-child, .sv-tbl td:first-child { padding-left: 12px; } .sv-tbl th:last-child, .sv-tbl td:last-child { padding-right: 12px; }
+  .lc-scroll .sv-tbl { font-size: 13px; }
+  .chk.cs-miss { margin-top: 4px; }
+}
+.lc-note + .sv-card { margin-top: 14px; }

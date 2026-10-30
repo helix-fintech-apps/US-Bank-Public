@@ -1,0 +1,24 @@
+name: Bug
+description: Something in USA Banc is wrong
+labels:
+  - bug
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: "What happened, and what did you expect?"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Log in as nizam@helixbots.ai
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Page or preview link

@@ -1,0 +1,49 @@
+name: Feature
+description: A new capability for USA Banc
+labels:
+  - feature
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: "What should a customer be able to do?"
+      placeholder: "As a parent, I can set a weekly spend limit on my teen's card."
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Sign-in and security
+        - Accounts and onboarding
+        - Transfers and ACH
+        - Person-to-person payments
+        - Bill pay
+        - Cards
+        - Loans and credit
+        - Family and minor accounts
+        - Dashboard and statements
+    validations:
+      required: true
+  - type: dropdown
+    id: account
+    attributes:
+      label: Account types it applies to
+      multiple: true
+      options:
+        - Solo
+        - Joint / family
+        - Minor (teen or custodial)
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules and limits
+      description: "Amount limits, approvals, cut-off times, who can see what."
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      placeholder: |
+        - [ ] ...
+        - [ ] ...

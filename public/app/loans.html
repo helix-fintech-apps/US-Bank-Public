@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loans | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+<link rel="stylesheet" href="/assets/loans-credit.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <nav class="sv-sub" aria-label="Borrowing"><a href="/app/loans" aria-current="page">Loans</a><a href="/app/credit">Credit score</a></nav>
+  <div id="view" aria-live="polite"><p class="sv-muted">Loading…</p></div>
+</div></main>
+<script type="module">
+import { api, shell, money, esc, newKey } from '/assets/client.js';
+import { day } from '/assets/servicing.js';
+shell('/app/loans');
+const $ = s => document.querySelector(s), view = $('#view'), q = new URLSearchParams(location.search);
+const SIM = '<p class="sv-note lc-note" role="note"><b>Simulated:</b> no real credit bureau and no real loan. Credit pulls, decisions, rates and payments exist only in this demo.</p>';
+const TERMS = [12, 24, 36, 48, 60, 72, 84, 120, 180, 240];
+const EMPLOY = [['employed', 'Employed'], ['self_employed', 'Self-employed'], ['retired', 'Retired'], ['unemployed', 'Not working'], ['other', 'Other']];
+const KIND = { scheduled: 'Monthly payment', extra: 'Extra principal', payoff: 'Payoff' };
+const DECISION = { approved: ['Approved', 'ok'], counteroffer: ['Counteroffer', 'warn'], declined: ['Declined', 'bad'] };
+const back = '<a class="lc-back" href="/app/loans">← All loans</a>';
+const head = (title, sub, extra = '') => `<div class="sv-h"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${extra}</div>`;
+const fail = e => { const el = $('#err'); if (el) el.textContent = e.code === 'cancelled' ? 'Canceled: nothing was sent.' : e.message; };
+const busy = async (btn, fn) => { btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } };
+const bar = p => `<div class="lc-bar" role="img" aria-label="${p}% of principal repaid"><i style="width:${Math.min(100, p)}%"></i></div>`;
+const pill = d => `<span class="lc-pill ${DECISION[d][1]}">${DECISION[d][0]}</span>`;
+
+// ---------- list ----------
+async function list() {
+  const [r, p] = await Promise.all([api('GET', '/api/loans'), api('GET', '/api/loans/products')]);
+  const active = r.loans.filter(l => l.status === 'active'), done = r.loans.filter(l => l.status !== 'active');
+  const waiting = r.applications.filter(a => a.status === 'decided' && a.offer && !a.offer.expired);
+  const loanRow = l => `<li class="loan"><div><a class="d" href="/app/loans?id=${esc(l.id)}">${esc(l.name)} ··${esc(l.last4)}</a>
+      <div class="m">${l.collateral ? `<span>${esc(l.collateral)}</span>` : ''}<span>${l.status === 'active' ? `${esc(l.apr)}% APR · ${money(l.payment)} due ${esc(day(l.nextDue))}` : `Paid off ${esc(day(l.paidOffOn))}`}</span></div>
+      ${bar(l.paidPercent)}</div><div class="a">${money(l.owed)}<div class="sv-muted">owed</div></div></li>`;
+  const appRow = a => `<li><div><a class="d" href="/app/loans?app=${esc(a.id)}">${esc(a.product.name)}</a>
+      <div class="m"><span>${money(a.requested.amount)} · ${a.requested.term} months</span><span>${esc(day(String(a.createdAt).slice(0, 10)))}</span></div></div>
+      <div class="a">${a.status === 'accepted' ? '<span class="lc-pill">Accepted</span>' : pill(a.decision)}</div></li>`;
+  view.innerHTML = `${head('Loans', 'Your loans, offers and applications. Check your rate with a soft pull first: it never affects your score.')}${SIM}
+    <p class="err" id="err" role="alert"></p>
+    <div class="sv-grid">
+      <div>
+        ${waiting.length ? `<section class="sv-card lc-offer-card" aria-labelledby="w-h"><header><h2 id="w-h">Offers waiting for you</h2></header><ul class="sv-list" id="waiting">${waiting.map(a => `<li>
+          <div><a class="d" href="/app/loans?app=${esc(a.id)}">${esc(a.product.name)}: ${money(a.offer.amount)}</a><div class="m"><span>${esc(a.offer.apr)}% APR · ${a.offer.term} months · ${money(a.offer.payment)}/mo</span><span>Good until ${esc(day(String(a.offer.expiresAt).slice(0, 10)))}</span></div></div>
+          <div class="a"><a class="btn pri sv-btn sm" href="/app/loans?app=${esc(a.id)}">Review</a></div></li>`).join('')}</ul></section>` : ''}
+        <section class="sv-card" aria-labelledby="l-h"><header><h2 id="l-h">Your loans</h2><span class="sv-muted">${active.length} open</span></header>
+          <ul class="sv-list" id="loans">${active.map(loanRow).join('') || '<li class="sv-empty">No open loans. Apply on the right; checking your rate is a soft pull.</li>'}</ul>
+          ${done.length ? `<details class="sv-more lc-done"><summary>Paid-off loans (${done.length})</summary><ul class="sv-list">${done.map(loanRow).join('')}</ul></details>` : ''}</section>
+        ${r.applications.length ? `<section class="sv-card" aria-labelledby="a-h"><header><h2 id="a-h">Recent applications</h2></header><ul class="sv-list" id="apps">${r.applications.map(appRow).join('')}</ul></section>` : ''}
+      </div>
+      <aside class="sv-card" aria-labelledby="p-h"><header><h2 id="p-h">Apply for a loan</h2></header>
+        <ul class="sv-list" id="products">${p.products.map(x => `<li class="product"><div><span class="d">${esc(x.name)}</span><div class="m"><span>${esc(x.blurb)}</span></div>
+          <div class="m"><span>${money(x.minAmount)}–${money(x.maxAmount)}</span><span>${x.minTerm}–${x.maxTerm} mo</span><span>${esc(x.aprMin)}%–${esc(x.aprMax)}% APR</span></div></div>
+          <div class="a"><a class="btn sv-btn sm ghost" href="/app/loans?apply=${esc(x.code)}" aria-label="Check your rate: ${esc(x.name)}">Check rate</a></div></li>`).join('')}</ul>
+        <p class="sv-muted sv-pad">Demo rates by simulated score band. Personal loans have no fees.</p></aside>
+    </div>`;
+}
+
+// ---------- apply ----------
+async function apply(code) {
+  const p = (await api('GET', '/api/loans/products')).products.find(x => x.code === code);
+  if (!p) { location.href = '/app/loans'; return; }
+  const terms = TERMS.filter(t => t >= p.minTerm && t <= p.maxTerm), pick = terms.includes(36) ? 36 : terms.includes(120) ? 120 : terms[0];
+  const fld = (id, label, attrs = '', hint = '') => `<label class="sv-fld"><span>${label}</span><input class="sv-in" id="${id}" ${attrs}>${hint ? `<small class="sv-muted">${hint}</small>` : ''}</label>`;
+  const coll = p.collateral === 'vehicle' ? `${fld('vehicleValue', 'Vehicle value ($)', 'inputmode="decimal" placeholder="25000.00" required', 'Simulated valuation: enter what it is worth.')}${fld('vehicle', 'Vehicle (year, make, model)', 'maxlength="80" placeholder="2023 Honda CR-V"')}`
+    : p.collateral === 'home' ? `${fld('propertyValue', 'Home value ($)', 'inputmode="decimal" placeholder="400000.00" required', 'Simulated appraisal: enter your estimate.')}${fld('mortgageBalance', 'Mortgage balance owed ($)', 'inputmode="decimal" value="0.00"')}` : '';
+  view.innerHTML = `${back}${head(esc(p.name), esc(p.blurb))}${SIM}
+    <div class="sv-grid">
+      <form class="sv-card" id="f" novalidate aria-labelledby="f-h"><header><h2 id="f-h">Your application</h2><span class="sv-muted">${esc(p.aprMin)}%–${esc(p.aprMax)}% APR</span></header>
+        <div class="sv-pad"><div class="sv-form lc-form">
+          ${fld('amount', 'Amount ($)', `inputmode="decimal" value="${esc(p.minAmount === '1000.00' ? '10000.00' : p.minAmount)}" required`, `${money(p.minAmount)} to ${money(p.maxAmount)}`)}
+          <label class="sv-fld"><span>Term</span><select class="sv-in" id="term">${terms.map(t => `<option value="${t}"${t === pick ? ' selected' : ''}>${t} months</option>`).join('')}</select></label>
+          ${fld('annualIncome', 'Yearly income before tax ($)', 'inputmode="decimal" placeholder="85000.00" required')}
+          ${fld('housingPayment', 'Monthly rent or mortgage ($)', 'inputmode="decimal" placeholder="1500.00" required')}
+          <label class="sv-fld"><span>Employment</span><select class="sv-in" id="employment">${EMPLOY.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></label>
+          ${fld('legalName', 'Full legal name', 'maxlength="80" autocomplete="name"', 'Demo: a name containing DECLINE is always declined.')}
+          ${coll}
+        </div>
+        <p class="err" id="err" role="alert"></p>
+        <div class="sv-row lc-acts"><button type="button" class="btn sv-btn ghost" id="check">Check my rate (soft pull)</button><button class="btn pri sv-btn" id="submit">Apply (hard pull)</button></div>
+        <div id="est"></div></div>
+      </form>
+      <aside class="sv-card" aria-labelledby="h-h"><header><h2 id="h-h">How it works</h2></header>
+        <ol class="lc-steps sv-pad">
+          <li><b>Check your rate.</b> A simulated soft pull: no effect on your score.</li>
+          <li><b>Apply.</b> A simulated hard pull, then an instant decision: approved, a counteroffer, or declined with the reasons.</li>
+          <li><b>Accept.</b> With a one-time code. The money goes to your checking or savings.</li>
+          <li><b>Repay.</b> Monthly, extra principal, or pay off any time with a payoff quote. No prepayment fee.</li>
+        </ol>
+        <p class="sv-muted sv-pad" style="padding-top:0">We don't ask for your Social Security number in this demo.</p></aside>
+    </div>`;
+  const appKey = newKey();                                                           // one request id per form: a double click can't apply twice
+  const body = () => { const b = { product: p.code }; for (const el of $('#f').querySelectorAll('input, select')) b[el.id] = el.value.trim(); b.term = Number($('#term').value); return b; };
+  $('#check').onclick = () => busy($('#check'), async () => {
+    $('#err').textContent = '';
+    try {
+      const r = await api('POST', '/api/loans/prequalify', body());
+      $('#est').innerHTML = `<div class="sv-note lc-estimate" id="estimate"><b>${r.likely === 'approved' ? 'You likely qualify.' : r.likely === 'counteroffer' ? 'You may qualify for different terms.' : 'You may not qualify right now.'}</b>
+        Estimated APR ${esc(r.aprLow)}%${r.aprHigh !== r.aprLow ? `–${esc(r.aprHigh)}%` : ''} · about ${money(r.payment)} a month for ${r.term} months.
+        ${r.offer && r.likely === 'counteroffer' ? `<br>Likely offer: ${money(r.offer.amount)} over ${r.offer.term} months.` : ''}
+        ${r.reasons.length ? `<br>${r.reasons.map(esc).join(' ')}` : ''}
+        <br><span class="sv-muted">Simulated soft pull (score ${r.score}, ${esc(r.scoreBand)}): no effect on your score. Not an offer to lend.</span></div>`;
+    } catch (e) { fail(e); }
+  });
+  $('#f').onsubmit = e => { e.preventDefault(); busy($('#submit'), async () => {
+    $('#err').textContent = '';
+    try { const a = await api('POST', '/api/loans/applications', { ...body(), idempotencyKey: appKey }); location.href = `/app/loans?app=${encodeURIComponent(a.id)}`; } catch (err) { fail(err); }
+  }); };
+}
+
+// ---------- decision ----------
+async function decision(id) {
+  const { application: a, depositAccounts: dep } = await api('GET', `/api/loans/applications/${encodeURIComponent(id)}`);
+  const o = a.offer, acceptKey = newKey();
+  const title = { approved: "You're approved", counteroffer: 'We can offer different terms', declined: "We can't approve this application" }[a.decision];
+  const facts = `<p class="sv-muted">Simulated credit score used: ${a.score}${a.dti ? ` · debt-to-income with this loan: ${esc(a.dti)}` : ''}${a.ltv ? ` · loan-to-value: ${esc(a.ltv)}` : ''}</p>`;
+  const reasons = a.reasons.length ? `<ol class="lc-reasons" id="reasons">${a.reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ol>` : '';
+  let inner;
+  if (a.decision === 'declined') inner = `<div class="sv-pad"><p>${esc(a.product.name)} for ${money(a.requested.amount)} over ${a.requested.term} months.</p>${facts}
+      <p class="lc-lead"><b>Principal reasons, most important first:</b></p>${reasons}
+      <p class="sv-muted">This is how an adverse action notice lists reasons. In real life you could ask for a free copy of your credit report within 60 days. ${esc(a.simulated)}</p></div>`;
+  else inner = `${a.decision === 'counteroffer' ? `<div class="sv-pad lc-tight"><p>You asked for ${money(a.requested.amount)} over ${a.requested.term} months. Here's what we can offer instead, because:</p>${reasons}</div>` : ''}
+      <div class="sv-tiles lc-tiles"><div><span>Amount</span><b id="o-amount">${money(o.amount)}</b></div><div><span>APR (fixed)</span><b>${esc(o.apr)}%</b></div>
+        <div><span>Term</span><b>${o.term} months</b></div><div><span>Monthly payment</span><b id="o-pay">${money(o.payment)}</b></div></div>
+      <div class="sv-pad">${facts}
+      ${a.status === 'accepted' ? `<p class="lc-lead"><b>You accepted this offer.</b> <a href="/app/loans?id=${esc(a.loanId)}">Go to your loan</a></p>`
+        : o.expired ? '<p class="lc-lead"><b>This offer expired.</b> Apply again to get a new decision.</p>'
+        : `<form id="acc" class="lc-accept" novalidate><label class="sv-fld"><span>Send the money to</span>
+          <select class="sv-in" id="to">${dep.map(d => `<option value="${esc(d.id)}">${esc(d.name)} ··${esc(d.last4)} (${money(d.balance)})</option>`).join('')}</select></label>
+          <div class="sv-row lc-acts"><button class="btn pri sv-btn" id="accept">Accept and get ${money(o.amount)}</button></div>
+          <p class="sv-muted">Offer good until ${esc(day(String(o.expiresAt).slice(0, 10)))}. Accepting asks for a one-time code. Simulated: the money moves only inside this demo.</p></form>`}</div>`;
+  view.innerHTML = `${back}${head('Your decision', `${esc(a.product.name)} · applied ${esc(day(String(a.createdAt).slice(0, 10)))}`)}${SIM}
+    <section class="sv-card lc-decision ${esc(a.decision)}" id="decision" data-decision="${esc(a.decision)}" aria-labelledby="d-h">
+      <header><h2 id="d-h">${title}</h2>${a.status === 'accepted' ? '<span class="lc-pill">Accepted</span>' : pill(a.decision)}</header>${inner}</section>
+    <p class="err" id="err" role="alert"></p>`;
+  if ($('#acc')) $('#acc').onsubmit = e => { e.preventDefault(); busy($('#accept'), async () => {
+    $('#err').textContent = '';
+    try {
+      const r = await api('POST', `/api/loans/applications/${encodeURIComponent(a.id)}/accept`, { depositAccountId: $('#to').value, idempotencyKey: acceptKey });
+      $('#acc').outerHTML = `<p class="lc-lead sv-ok" id="done">Your loan is open. ${money(r.loan.principal)} was sent to your account. <a href="/app/loans?id=${esc(r.loan.id)}">See your loan and schedule</a></p>`;
+    } catch (err) { fail(err); }
+  }); };
+}
+
+// ---------- loan detail ----------
+async function detail(id) {
+  const { loan: l, depositAccounts: dep } = await api('GET', `/api/loans/${encodeURIComponent(id)}`);
+  const active = l.status === 'active';
+  const rows = (rs, due) => rs.map(r => `<tr><td>${due ? esc(day(r.due)) : r.n}</td><td class="n hide-sm">${money(r.payment)}</td><td class="n">${money(r.principal)}</td><td class="n">${money(r.interest)}</td><td class="n">${money(r.balance)}</td></tr>`).join('');
+  const table = (tid, rs, due, foot = '') => `<div class="lc-scroll"><table class="sv-tbl" id="${tid}">
+      <thead><tr><th>${due ? 'Due' : '#'}</th><th class="n hide-sm">Payment</th><th class="n">Principal</th><th class="n">Interest</th><th class="n">Balance</th></tr></thead><tbody>${rows(rs, due)}</tbody>${foot}</table></div>`;
+  view.innerHTML = `${back}${head(`${esc(l.name)} ··${esc(l.last4)}`, l.collateral ? esc(l.collateral) : `Opened ${esc(day(l.originatedOn))}`,
+      `<span class="lc-pill ${active ? '' : 'ok'}" id="status">${active ? 'Active' : 'Paid off'}</span>`)}${SIM}
+    <section class="sv-card"><div class="sv-tiles lc-tiles lc-6">
+      <div><span>Balance owed</span><b id="owed">${money(l.owed)}</b></div><div><span>Monthly payment</span><b>${money(l.payment)}</b></div>
+      <div><span>Next due</span><b>${l.nextDue ? esc(day(l.nextDue)) : '—'}</b></div><div><span>APR (fixed)</span><b>${esc(l.apr)}%</b></div>
+      <div><span>Original amount</span><b>${money(l.principal)}</b></div><div><span>Payments made</span><b>${l.installmentsPaid} of ${l.term}</b></div></div>
+      <div class="sv-pad">${bar(l.paidPercent)}<p class="sv-muted">${l.paidPercent}% of principal repaid</p></div></section>
+    <p class="err" id="err" role="alert"></p>
+    <div class="sv-grid">
+      <div>
+        <section class="sv-card" aria-labelledby="ph-h"><header><h2 id="ph-h">Payments</h2></header>
+          <div class="lc-scroll"><table class="sv-tbl" id="payments"><thead><tr><th>Date</th><th class="n">Amount</th><th class="n">Principal</th><th class="n">Interest</th></tr></thead><tbody>
+          ${l.payments.map(p => `<tr><td>${esc(day(p.postedOn))}<div class="sv-muted">${esc(KIND[p.kind])} · ${esc(p.from)}</div></td><td class="n">${money(p.amount)}</td><td class="n">${money(p.principal)}</td><td class="n">${money(p.interest)}</td></tr>`).join('') || '<tr><td colspan="4" class="sv-muted">No payments yet.</td></tr>'}</tbody></table></div></section>
+        ${active ? `<section class="sv-card" aria-labelledby="rs-h"><header><h2 id="rs-h">Remaining schedule</h2><span class="sv-muted">${l.remaining.length} payments; the last one absorbs rounding</span></header>${table('remaining', l.remaining, true)}</section>` : ''}
+        <section class="sv-card" aria-labelledby="os-h"><details class="lc-orig"><summary><h2 id="os-h">Original schedule</h2><span class="sv-muted">${money(l.principal)} at ${esc(l.apr)}% for ${l.term} months</span></summary>
+          ${table('original', l.original.rows, false, `<tfoot><tr><td>Total</td><td class="hide-sm"></td><td class="n" id="tot-principal">${money(l.original.totalPrincipal)}</td><td class="n">${money(l.original.totalInterest)}</td><td></td></tr></tfoot>`)}</details></section>
+      </div>
+      <aside>${active ? `<form class="sv-card" id="pay" novalidate aria-labelledby="pay-h"><header><h2 id="pay-h">Make a payment</h2></header><div class="sv-pad">
+        <fieldset class="lc-radio"><legend class="skip">Payment type</legend>
+          <label><input type="radio" name="kind" value="scheduled" checked> Monthly payment <b>${money(l.payment)}</b></label>
+          <label><input type="radio" name="kind" value="extra"> Extra principal</label>
+          <label><input type="radio" name="kind" value="payoff"> Pay off <b>${money(l.payoff.total)}</b></label></fieldset>
+        <div class="sv-form" style="grid-template-columns:1fr">
+          <label class="sv-fld"><span>From</span><select class="sv-in" id="from">${dep.map(d => `<option value="${esc(d.id)}">${esc(d.name)} ··${esc(d.last4)} (${money(d.balance)})</option>`).join('')}</select></label>
+          <label class="sv-fld" id="amt-wrap" hidden><span>Extra principal amount ($)</span><input class="sv-in" id="amt" inputmode="decimal" placeholder="100.00"></label></div>
+        <div class="sv-row lc-acts"><button class="btn pri sv-btn" id="pay-go">Pay now</button></div><p class="sv-ok lc-ok" id="ok" role="status"></p></div></form>
+        <section class="sv-card" aria-labelledby="q-h"><header><h2 id="q-h">Payoff quote</h2><span class="sv-muted">${esc(day(l.payoff.asOf))}</span></header>
+          <dl class="sv-kv sv-pad" id="quote"><dt>Principal</dt><dd>${money(l.payoff.principal)}</dd><dt>Interest</dt><dd>${money(l.payoff.interest)} <span class="sv-muted">(${l.payoff.days} day${l.payoff.days === 1 ? '' : 's'} since the last payment)</span></dd>
+          <dt>Total to pay off</dt><dd><b id="payoff-total">${money(l.payoff.total)}</b></dd></dl></section>`
+        : `<section class="sv-card sv-pad"><p>Paid off on ${esc(day(l.paidOffOn))}. Nothing more is owed.</p></section>`}</aside>
+    </div>`;
+  if (!active) return;
+  let key = newKey();
+  for (const r of document.querySelectorAll('input[name=kind]')) r.onchange = () => { $('#amt-wrap').hidden = document.querySelector('input[name=kind]:checked').value !== 'extra'; key = newKey(); };
+  $('#pay').onsubmit = e => { e.preventDefault(); busy($('#pay-go'), async () => {
+    $('#err').textContent = '';
+    const kind = document.querySelector('input[name=kind]:checked').value;
+    try {
+      const r = await api('POST', `/api/loans/${encodeURIComponent(l.id)}/payments`, { fromAccountId: $('#from').value, kind, amount: $('#amt').value.trim(), idempotencyKey: key });
+      key = newKey();
+      await detail(l.id);
+      const msg = `Paid ${money(r.payment.amount)}: ${money(r.payment.principal)} principal, ${money(r.payment.interest)} interest.${r.loan.status === 'paid_off' ? ' Your loan is paid off.' : ''}`;
+      if ($('#ok')) $('#ok').textContent = msg; else $('#err').insertAdjacentHTML('beforebegin', `<p class="sv-ok lc-ok" id="ok" role="status">${esc(msg)}</p>`);
+    } catch (err) { fail(err); }
+  }); };
+}
+
+try {
+  if (q.get('id')) await detail(q.get('id'));
+  else if (q.get('app')) await decision(q.get('app'));
+  else if (q.get('apply')) await apply(q.get('apply'));
+  else await list();
+} catch (e) { view.innerHTML = `${back}<p class="err" role="alert">${esc(e.message)}</p>`; }
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+/* Sign-in + dashboard for USA Banc (demo). Navy / blue / white. */
+.auth-bg { min-height: 100vh; margin: 0;
+  background:
+    linear-gradient(118deg, transparent 38%, rgba(124,192,255,.06) 38%, rgba(124,192,255,.06) 52%, transparent 52%),
+    linear-gradient(118deg, transparent 60%, rgba(124,192,255,.05) 60%, rgba(124,192,255,.05) 78%, transparent 78%),
+    radial-gradient(120% 90% at 85% 0%, #123a7a 0%, #0c2d63 42%, #081f47 100%);
+  color: #fff; display: flex; flex-direction: column; }
+.auth-top { padding: 20px max(16px, env(safe-area-inset-left, 0px)); }
+.auth-top .brand { color: #fff; }
+.auth-top .brand b { color: #fff; }
+.auth-wrap { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding: 0 16px 48px; }
+.auth-card { width: 100%; max-width: 440px; background: rgba(6,24,58,.55); border: 1px solid rgba(124,192,255,.18); border-top: 3px solid #c41e3a; border-radius: 18px; padding: 34px 32px 30px; backdrop-filter: blur(6px); }
+.auth-card h1 { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: #cfe1fb; font-weight: 700; margin-bottom: 22px; }
+.auth-card h1.big { font-size: 24px; letter-spacing: -.01em; text-transform: none; color: #fff; margin-bottom: 6px; }
+.fld { position: relative; margin: 22px 0 4px; }
+.fld input { width: 100%; background: transparent; border: 0; border-bottom: 1.5px solid rgba(207,225,251,.5); color: #fff; font-size: 17px; padding: 6px 0 8px; }
+.fld input:focus { outline: none; border-bottom-color: #ff8a9a; }
+.fld label { position: absolute; left: 0; top: 8px; color: #b7c8e6; font-size: 17px; pointer-events: none; transition: .15s; }
+.fld input:focus + label, .fld input.has + label { top: -14px; font-size: 12px; color: #9fc3ef; }
+.fld .show { position: absolute; right: 0; top: 6px; background: none; border: 0; color: #cfe1fb; font-size: 15px; cursor: pointer; padding: 2px 4px; }
+.chk { display: flex; align-items: center; gap: 10px; margin: 14px 0 6px; font-size: 16px; color: #e5eefb; cursor: pointer; }
+.chk input { width: 20px; height: 20px; accent-color: #7cc0ff; }
+.auth-btn { width: 100%; height: 52px; border-radius: 10px; font-size: 17px; font-weight: 700; cursor: pointer; border: 1.5px solid transparent; margin-top: 18px; }
+.auth-btn.pri { background: #fff; color: #1a56b8; } .auth-btn.pri:hover { background: #eaf3ff; }
+.auth-btn.ghost { background: transparent; color: #fff; border-color: rgba(207,225,251,.55); display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+.auth-btn.ghost:hover { border-color: #7cc0ff; }
+.auth-btn:disabled { opacity: .55; cursor: default; }
+.auth-links { margin-top: 26px; display: flex; flex-direction: column; gap: 16px; }
+.auth-links a { color: #fff; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.auth-links a.u { font-weight: 400; text-decoration: underline; color: #cfe1fb; }
+.auth-err { color: #ffb4b4; font-size: 14px; font-weight: 600; margin-top: 14px; min-height: 1px; }
+.auth-sub { color: #bdd0ee; font-size: 15px; line-height: 1.5; margin-bottom: 4px; }
+.code { display: flex; gap: 10px; margin: 20px 0 4px; }
+.code input { flex: 1 1 0; width: 0; min-width: 0; height: 60px; text-align: center; font-size: 26px; font-weight: 700; color: #fff; background: rgba(255,255,255,.06); border: 1.5px solid rgba(207,225,251,.35); border-radius: 12px; }
+.code input:focus { outline: none; border-color: #7cc0ff; }
+.demo-hint { margin-top: 20px; font-size: 13px; color: #9ab6e0; background: rgba(124,192,255,.1); border: 1px solid rgba(124,192,255,.22); border-radius: 10px; padding: 10px 12px; }
+.demo-hint b { color: #dceaff; }
+.auth-foot { text-align: center; padding: 18px; color: #93a9ce; font-size: 12px; }
+
+/* dashboard */
+.dash { background: var(--bg); min-height: 100vh; }
+.dash-top { background: var(--brand); color: #fff; }
+.dash-top .wrap { display: flex; align-items: center; gap: 18px; height: 64px; }
+.dash-top .brand { color: #fff; } .dash-top .brand b { color: #fff; }
+.dash-top .grow { flex: 1; }
+.dash-top a.navlink { color: #dce7f8; text-decoration: none; font-weight: 600; font-size: 15px; }
+.dash-top a.navlink:hover { color: #fff; }
+.dash-main { padding: 28px max(16px, env(safe-area-inset-left, 0px)) 60px; }
+.dash-h { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.dash-h h1 { font-size: 26px; } .dash-h .tot { font-size: 15px; color: var(--muted); }
+.acct-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 18px 0 30px; }
+.acct { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; box-shadow: var(--shadow); }
+.acct .k { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.acct .nm { font-weight: 700; margin: 2px 0 10px; }
+.acct .bal { font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
+.acct .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.acct .bar { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.acct .bar a { font-size: 13px; font-weight: 700; color: var(--brand-2); text-decoration: none; border: 1px solid var(--line); padding: 5px 10px; border-radius: 8px; }
+.acct .bar a:hover { border-color: var(--brand-2); }
+.acct.minor { border-top: 3px solid #7cc0ff; }
+.tx { padding: 0; background: #fff; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.tx h2 { font-size: 16px; padding: 16px 20px; border-bottom: 1px solid var(--line); margin: 0; }
+.tx table { width: 100%; border-collapse: collapse; }
+.tx td { padding: 12px 20px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.tx tr:last-child td { border-bottom: 0; }
+.tx td.amt { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.tx td.amt.pos { color: #157347; }
+.tx .dt { color: var(--muted); font-size: 13px; }
+
+/* signed-in app: clickable account cards, header nav, step-up dialog */
+button.acct { font: inherit; color: inherit; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 2px; width: 100%; }
+button.acct:hover { border-color: var(--brand-2); }
+button.acct[aria-pressed="true"] { border-color: var(--brand-2); box-shadow: 0 0 0 2px rgba(26,86,184,.25), var(--shadow); }
+.acct .role { text-transform: none; letter-spacing: 0; color: var(--brand-2); font-weight: 700; }
+.dash-nav { display: flex; gap: 18px; margin-left: 18px; flex-wrap: wrap; }
+.dash-nav a[aria-current="page"] { color: #fff; text-decoration: underline; text-underline-offset: 6px; }
+.dash-nav a[hidden] { display: none; }                     /* pages a minor cannot use (client.js) */
+.dash .err { color: #b42318; font-weight: 600; min-height: 1px; margin: 4px 0; }
+.dash .sub { color: var(--muted); }
+.dash .chk { font-size: 15px; } .dash .chk input { accent-color: var(--brand-2); }
+dialog.stepup { border: 0; border-radius: 16px; padding: 26px 26px 22px; width: min(420px, calc(100vw - 32px)); box-shadow: 0 20px 60px rgba(8,31,71,.35); color: var(--ink); }
+dialog.stepup::backdrop { background: rgba(8,31,71,.55); }
+dialog.stepup h2 { font-size: 21px; margin-bottom: 6px; }
+dialog.stepup .sub { color: var(--muted); font-size: 14px; margin-bottom: 14px; }
+dialog.stepup .lbl { display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+dialog.stepup input { width: 100%; height: 50px; font-size: 24px; letter-spacing: .4em; padding: 0 0 0 .4em; text-align: center; border: 1.5px solid var(--line); border-radius: 10px; }
+dialog.stepup input:focus { outline: none; border-color: var(--brand-2); }
+dialog.stepup .err { color: #b42318; font-size: 14px; font-weight: 600; min-height: 18px; margin: 8px 0; }
+dialog.stepup .row { display: flex; gap: 10px; justify-content: flex-end; }
+dialog.stepup .demo-code { margin-top: 14px; font-size: 13px; background: var(--brand-soft); border-radius: 8px; padding: 8px 10px; color: var(--brand); }
+/* Phone: the navigation drops to its own row under the logo and scrolls sideways inside itself, so every page stays reachable. */
+@media (max-width: 700px) {
+  .dash-top .wrap { flex-wrap: wrap; height: auto; padding-top: 10px; padding-bottom: 4px; gap: 4px 14px; }
+  .dash-top .grow { flex: 1 1 0; }
+  .dash-nav { order: 3; flex: 0 0 100%; margin-left: 0; flex-wrap: nowrap; overflow-x: auto; gap: 20px; padding: 4px 0 8px; -webkit-overflow-scrolling: touch; }
+  .dash-nav a { flex: none; white-space: nowrap; display: inline-flex; align-items: center; min-height: 44px; }
+}

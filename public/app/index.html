@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your accounts | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=2" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+<link rel="stylesheet" href="/assets/servicing.css">
+</head>
+<body class="dash">
+<main class="dash-main"><div class="wrap">
+  <div class="dash-h"><h1 id="hi">Your accounts</h1><span class="tot" id="tot"></span></div>
+  <a class="sv-pill" id="alerts-pill" href="/app/alerts" hidden></a>
+  <p class="err" id="err" role="alert"></p>
+  <div class="acct-grid" id="accounts" aria-live="polite"><p class="sub">Loading your accounts…</p></div>
+  <section class="tx" aria-labelledby="tx-h"><h2 id="tx-h">Recent activity</h2><table id="tx"><tbody><tr><td class="sub">Pick an account to see its activity.</td></tr></tbody></table></section>
+</div></main>
+<script type="module">
+import { api, shell, money, esc } from '/assets/client.js';
+shell('/app');
+const $ = s => document.querySelector(s);
+api('GET', '/api/alerts/unread').then(r => { const p = $('#alerts-pill'); p.textContent = r.unread ? `${r.unread} unread ${r.unread === 1 ? 'alert' : 'alerts'}` : 'Alerts: all read'; p.hidden = false; }).catch(() => {});
+const ROLE = { joint_owner: 'Joint account', custodian: 'You manage this account', minor: 'Your account (managed by a parent)', viewer: 'View only' };
+const KIND = { checking: 'Checking', savings: 'Savings', money_market: 'Money market', cd: 'CD', credit_card: 'Credit card', loan: 'Loan', teen_checking: 'Teen checking', custodial_savings: 'Custodial savings' };
+
+function card(a) {
+  const isCard = a.kind === 'credit_card', isLoan = a.kind === 'loan';
+  const big = isCard || isLoan ? money(a.owed) : money(a.balance);
+  const sub = isCard ? `${money(a.available)} available${a.paymentDue ? ` · due ${esc(a.paymentDue)}` : ''}`
+    : isLoan ? `Balance owed${a.paymentDue ? ` · next payment ${esc(a.paymentDue)}` : ''}`
+    : a.apy ? `Available balance · ${esc(a.apy)}% APY (demo)` : 'Available balance';
+  return `<button class="acct ${a.role === 'custodian' || a.role === 'minor' ? 'minor' : ''}" data-id="${esc(a.id)}" aria-label="${esc(a.name)} ending ${esc(a.last4)}: show activity">
+    <span class="k">${esc(KIND[a.kind] ?? a.kind)}${ROLE[a.role] ? ` · <span class="role">${esc(ROLE[a.role])}</span>` : ''}</span>
+    <span class="nm">${esc(a.name)} ··${esc(a.last4)}</span>
+    <span class="bal">${big}</span><span class="sub">${sub}</span></button>`;
+}
+
+async function showActivity(id) {
+  document.querySelectorAll('.acct').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+  try {
+    const r = await api('GET', `/api/accounts/${encodeURIComponent(id)}/transactions?limit=15`);
+    $('#tx-h').textContent = `Recent activity · ${r.account.name} ··${r.account.last4}`;
+    $('#tx').innerHTML = r.transactions.length ? r.transactions.map(t => `<tr><td><div>${esc(t.description)}</div><div class="dt">${esc(t.postedOn)}${t.category ? ' · ' + esc(t.category) : ''}</div></td>
+      <td class="amt ${t.amount.startsWith('-') ? '' : 'pos'}">${t.amount.startsWith('-') ? '' : '+'}${money(t.amount)}</td></tr>`).join('')
+      : '<tr><td class="sub">No activity yet.</td></tr>';
+  } catch (e) { $('#err').textContent = e.message; }
+}
+
+try {
+  const me = await api('GET', '/api/me');
+  $('#hi').textContent = `Welcome back, ${me.user.displayName}`;
+  $('#tot').textContent = `${money(me.totalDeposits)} across your deposit accounts`;
+  $('#accounts').innerHTML = me.accounts.map(card).join('') || '<p class="sub">You don\'t have any accounts yet.</p>';
+  $('#accounts').addEventListener('click', e => { const b = e.target.closest('.acct'); if (b) showActivity(b.dataset.id); });
+  const first = me.accounts.find(a => a.kind === 'checking') ?? me.accounts[0];
+  if (first) showActivity(first.id);
+} catch (e) { $('#err').textContent = e.message; $('#accounts').innerHTML = ''; }
+</script>
+</body>
+</html>

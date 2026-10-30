@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Log in | USA Banc</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=2" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/auth.css">
+</head>
+<body class="auth-bg">
+<div class="auth-top"><a class="brand" href="/" aria-label="USA Banc home"><img src="/assets/logo.svg" alt="" width="36" height="36"><span>USA <b>Banc</b></span></a></div>
+<main class="auth-wrap">
+  <!-- Step 1: credentials -->
+  <form class="auth-card" id="step-creds" method="post" action="/api/session" autocomplete="on" novalidate>
+    <h1>Account login</h1>
+    <noscript><p class="auth-err">Sign-in needs JavaScript. Turn it on in your browser, then reload this page.</p></noscript>
+    <div class="fld"><input id="user" name="username" type="text" autocomplete="username" required><label for="user">Username</label></div>
+    <label class="chk"><input type="checkbox" id="remember"> Remember my username</label>
+    <div class="fld"><input id="pass" name="password" type="password" autocomplete="current-password" required><label for="pass">Password</label><button type="button" class="show" id="show" aria-pressed="false">Show</button></div>
+    <p class="auth-err" id="err1" role="alert"></p>
+    <button class="auth-btn pri" type="submit">Log in with password</button>
+    <button class="auth-btn ghost" type="button" id="passkey"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18" cy="11" r="2"/><path d="M18 13v5l1.6 1.2L18 20.6"/></svg> Use passkey</button>
+    <div class="auth-links">
+      <a href="/forgot-password" id="forgot">Forgot username or password <span aria-hidden="true">›</span></a>
+      <a class="u" href="/enroll">Enroll in online banking</a>
+    </div>
+    <div class="demo-hint">Demo only — no real account. <b>nizam@helixbots.ai</b> / <b>nizam</b> signs straight in. <b>jordan@usabanc.example</b> / <b>jordan-demo-pass</b> also asks for a one-time code.</div>
+  </form>
+
+  <!-- Step 2: one-time code -->
+  <form class="auth-card" id="step-code" hidden novalidate>
+    <h1 class="big">Enter your one-time code</h1>
+    <p class="auth-sub">For your security, we sent a 6-digit code to the phone ending in <b id="phone">··••</b>. It works for 10 minutes.</p>
+    <div class="code" id="code" role="group" aria-label="6-digit code">
+      <input inputmode="numeric" maxlength="6" aria-label="Digit 1" autocomplete="one-time-code"><input inputmode="numeric" maxlength="1" aria-label="Digit 2"><input inputmode="numeric" maxlength="1" aria-label="Digit 3"><input inputmode="numeric" maxlength="1" aria-label="Digit 4"><input inputmode="numeric" maxlength="1" aria-label="Digit 5"><input inputmode="numeric" maxlength="1" aria-label="Digit 6">
+    </div>
+    <p class="auth-err" id="err2" role="alert"></p>
+    <button class="auth-btn pri" type="submit">Verify and log in</button>
+    <div class="auth-links">
+      <a href="#" id="resend">Resend code</a>
+      <a class="u" href="#" id="back">Start over</a>
+    </div>
+    <div class="demo-hint" id="demo-msg" hidden>Simulated text message (no real texts are sent in this demo): your code is <b id="democode"></b>.</div>
+  </form>
+</main>
+<footer class="auth-foot">USA Banc is a fictional demo bank for testing. Not a real bank. We'll never ask for your password by phone, text or email.</footer>
+
+<script type="module">
+import { api } from '/assets/client.js';
+const $ = s => document.querySelector(s);
+const creds = $('#step-creds'), codeStep = $('#step-code');
+// Where to go after sign-in: a path on this site only. "/\evil.example" and "//evil.example" leave the site, so they go to /app.
+const next = (() => {
+  const n = new URLSearchParams(location.search).get('next') ?? '';
+  try { if (n.startsWith('/') && !n.includes('\\') && new URL(n, location.origin).origin === location.origin) return n; } catch {}
+  return '/app';
+})();
+const busy = (form, on) => form.querySelectorAll('button').forEach(b => (b.disabled = on));
+
+document.querySelectorAll('.fld input').forEach(i => { const sync = () => i.classList.toggle('has', !!i.value); i.addEventListener('input', sync); sync(); });
+$('#show').addEventListener('click', () => { const p = $('#pass'), on = p.type === 'password'; p.type = on ? 'text' : 'password'; $('#show').textContent = on ? 'Hide' : 'Show'; $('#show').setAttribute('aria-pressed', String(on)); });
+$('#passkey').addEventListener('click', () => { $('#err1').textContent = 'Passkeys are not set up in this demo yet. Use your password.'; });
+
+function showCode(r) {
+  $('#phone').textContent = '··' + (r.phoneLast2 ?? '••');
+  if (r.demoCode) { $('#democode').textContent = r.demoCode; $('#demo-msg').hidden = false; }
+  creds.hidden = true; codeStep.hidden = false; boxes.forEach(b => (b.value = '')); boxes[0].focus();
+}
+creds.addEventListener('submit', async e => {
+  e.preventDefault(); $('#err1').textContent = '';
+  const username = $('#user').value.trim(), password = $('#pass').value;
+  if (!username || !password) { $('#err1').textContent = 'Enter your username and password.'; return; }
+  busy(creds, true);
+  try {
+    const r = await api('POST', '/api/session', { username, password }, { auth: false, retry: false });
+    try { if ($('#remember').checked) localStorage.setItem('usab_user', username); else localStorage.removeItem('usab_user'); } catch {}
+    if (r.next === 'done') { location.href = next; return; }
+    showCode(r);
+  } catch (err) { $('#err1').textContent = err.message; $('#pass').value = ''; $('#pass').classList.remove('has'); }
+  finally { busy(creds, false); }
+});
+
+const boxes = [...document.querySelectorAll('#code input')];
+const code = () => boxes.map(b => b.value).join('');
+boxes.forEach((b, i) => {
+  b.addEventListener('input', () => {
+    const d = b.value.replace(/\D/g, '');
+    if (d.length > 1) { d.slice(0, 6 - i).split('').forEach((c, k) => boxes[i + k] && (boxes[i + k].value = c)); boxes[Math.min(5, i + d.length - 1)].focus(); }
+    else { b.value = d; if (d && boxes[i + 1]) boxes[i + 1].focus(); }
+    if (code().length === 6) codeStep.requestSubmit();
+  });
+  b.addEventListener('keydown', e => { if (e.key === 'Backspace' && !b.value && boxes[i - 1]) { boxes[i - 1].value = ''; boxes[i - 1].focus(); } });
+});
+codeStep.addEventListener('submit', async e => {
+  e.preventDefault(); $('#err2').textContent = '';
+  if (code().length < 6) { $('#err2').textContent = 'Enter all 6 digits.'; return; }
+  busy(codeStep, true);
+  try { await api('POST', '/api/session/code', { code: code() }, { auth: false, retry: false }); location.href = next; }
+  catch (err) { $('#err2').textContent = err.message; boxes.forEach(b => (b.value = '')); boxes[0].focus(); }
+  finally { busy(codeStep, false); }
+});
+$('#resend').addEventListener('click', async e => {
+  e.preventDefault(); $('#err2').textContent = '';
+  try { const r = await api('POST', '/api/session/resend', {}, { auth: false, retry: false }); if (r.demoCode) $('#democode').textContent = r.demoCode; $('#err2').textContent = ''; boxes.forEach(b => (b.value = '')); boxes[0].focus(); }
+  catch (err) { $('#err2').textContent = err.message; }
+});
+$('#back').addEventListener('click', e => { e.preventDefault(); codeStep.hidden = true; creds.hidden = false; $('#err2').textContent = ''; $('#pass').value = ''; $('#pass').focus(); });
+try { const h = sessionStorage.getItem('usab_code'); if (h && location.hash === '#code') { sessionStorage.removeItem('usab_code'); showCode(JSON.parse(h)); } } catch {}
+try { const u = localStorage.getItem('usab_user'); if (u) { $('#user').value = u; $('#user').classList.add('has'); $('#remember').checked = true; } } catch {}
+</script>
+</body>
+</html>

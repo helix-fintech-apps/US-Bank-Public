@@ -1,0 +1,58 @@
+# Helix review gate: sends the pull request's diff to Helix and reports its verdict (Go / No-go / Not proven).
+# Go passes. No-go and Not proven hold the PR (the check fails) until the findings are fixed or accepted.
+# Repo secrets: HELIX_GATE_URL (the Helix review endpoint) and HELIX_GATE_TOKEN. Until they are set, the check
+# passes with a notice that Helix is not connected, so it never pretends to have reviewed anything.
+name: Helix
+# Paused: GitHub Actions is off for now (org billing). Runs only if started by hand.
+# To turn back on, restore the original `on:` triggers (see git history).
+on:
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  gate:
+    name: Helix gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HELIX_GATE_URL: ${{ secrets.HELIX_GATE_URL }}
+      HELIX_GATE_TOKEN: ${{ secrets.HELIX_GATE_TOKEN }}
+      # PR fields go through env, never pasted into the script: a PR title is user input
+      PR_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_BASE: ${{ github.base_ref }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Ask Helix for a verdict
+        id: helix
+        run: |
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::notice::No pull request here (started by hand?). Helix reviews pull requests only, so nothing was sent."
+            { echo "### Helix: skipped"; echo "No pull request context, so there was nothing to review."; } >> "$GITHUB_STEP_SUMMARY"
+            echo "verdict=no_pr" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ -z "$HELIX_GATE_URL" ]; then
+            echo "::notice::Helix is not connected to this repo yet (set HELIX_GATE_URL and HELIX_GATE_TOKEN). No review was done."
+            { echo "### Helix: not connected"; echo "No review was done. Add the HELIX_GATE_URL and HELIX_GATE_TOKEN secrets to turn the gate on."; } >> "$GITHUB_STEP_SUMMARY"
+            echo "verdict=not_connected" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git diff "origin/$PR_BASE...HEAD" > pr.diff
+          jq -n --arg repo "$PR_REPO" --argjson pr "$PR_NUMBER" \
+                --arg sha "$PR_SHA" --arg base "$PR_BASE" \
+                --arg title "$PR_TITLE" --rawfile diff pr.diff \
+                '{repo:$repo, pr:$pr, sha:$sha, base:$base, title:$title, diff:$diff}' > req.json
+          code=$(curl -sS -o verdict.json -w '%{http_code}' -X POST "$HELIX_GATE_URL" \
+                   -H "Authorization: Bearer $HELIX_GATE_TOKEN" -H 'Content-Type: application/json' --data @req.json)
+          if [ "$code" != "200" ]; then echo "::error::Helix answered HTTP $code"; cat verdict.json || true; exit 1; fi
+          verdict=$(jq -r '.verdict // "Not proven"' verdict.json)
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Helix: $verdict"
+            jq -r '(.findings // [])[] | "- **\(.severity // "info")** \(.title // "finding") \(if .file then "(`\(.file)`)" else "" end)"' verdict.json
+          } >> "$GITHUB_STEP_SUMMARY"
+          case "$verdict" in
+            Go) echo "Helix: Go" ;;
+            *) echo "::error::Helix: $verdict. The PR is held until the findings are fixed or accepted."; exit 1 ;;
+          esac
