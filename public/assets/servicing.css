@@ -105,6 +105,7 @@ button[role="switch"]:disabled { opacity: .5; cursor: default; }
 .sv-tbl tr:last-child td { border-bottom: 0; }
 .sv-tbl td:first-child:not([colspan]) { overflow-wrap: normal; }
 .sv-tbl .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sv-tbl .n[colspan] { white-space: normal; }                  /* the "Closing $x" total row may wrap on a phone instead of widening the page */
 .sv-tbl .pos { color: #157347; font-weight: 700; }
 
 /* inbox */
