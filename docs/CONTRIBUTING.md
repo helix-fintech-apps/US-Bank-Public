@@ -62,6 +62,7 @@ USA Banc is a **fictional demo bank**. Nothing moves real money, and nothing tal
   | Loans & credit (M7, M8) | `040_*.sql` | `…40`–`…49` |
   | Servicing (M3) | `050_*.sql` | `…50`–`…59` |
   | Audit fixes | `060_*.sql`–`069_*.sql` (060, 061 and 062 are taken) | none (they add no system accounts) |
+  | Pay it in 4 | `065_pay_in_4.sql` | `…60`–`…69` |
 
   The next feature that needs a migration takes the next free number after the highest one in `db/migrations/` (today `063`) and, if it adds system accounts, a new UUID range starting at `…60`.
 
